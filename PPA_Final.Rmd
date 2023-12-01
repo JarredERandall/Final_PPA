@@ -49,3 +49,39 @@ theme_update(plot.title = element_text(hjust = 0.5))
 
 
 ```
+
+# Intro
+
+# Data
+
+```{r read_data, results = FALSE, message = FALSE, warning = FALSE, error = FALSE}
+
+listings <- read.csv("/Users/nohman/Documents/GitHub/PPA_Final_Airbnb/Data/Airbnb/listings.csv")
+
+listings_details <- read.csv("/Users/nohman/Documents/GitHub/PPA_Final_Airbnb/Data/Airbnb/listings_details.csv")
+
+nhoods <- st_read("/Users/nohman/Documents/GitHub/PPA_Final_Airbnb/Data/Airbnb/neighbourhoods.geojson")
+
+
+
+```
+View(nhoods)
+- Add sentiment analysis 
+- Add tract info
+
+
+# OLS Regression Model
+Regression Variables:
+
+- sentiment
+
+
+
+
+
+
+
+
+
+
+
