@@ -97,13 +97,42 @@ View(nhoods)
 
 
 # OLS Regression Model
+
+```{r read_data, results = FALSE, message = FALSE, warning = FALSE, error = FALSE}
+roomtype <- count(unique(joined$room_type))
+roomtype
+
+
+
+
+```
 Regression Variables:
 
-- sentiment
+Spatial Features:
+-nhood
+-k nearest neighboors price per sqft
+
+Non-Spatial (hedonic) Features:
+- room type
+- number of reviews
+- availability
+- is super host
+- identity verified
+- property type
+- accomodates / guests_included?
+- bathrooms
+- bedrooms
+- break up the amenities
+- sqft is not there for all
+- review_scores_rating
+
+Check instances for each variable
 
 
 
-
+Questions for Michael:
+1. Wants to see process of varibale choice (i.e. we run regression and then drop variables etc?)
+2. Is our idea valid?
 
 
 
