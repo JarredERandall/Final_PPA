@@ -8,24 +8,44 @@ date: "2023-12-01"
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## R Markdown
+```{r setup, include=FALSE, class.source = 'fold-show'}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(tidycensus)
+library(sf)
+library(stargazer)
+library(spdep)
+library(caret)
+library(ckanr)
+library(FNN)
+library(kableExtra)
+library(grid)
+library(viridisLite)
+library(viridis)
+library(gridExtra)
+library(jtools)
+library(ggcorrplot) 
+library(corrr)      
+library(kableExtra)
+library(jtools)     
+library(ggstance) 
+library(ggpubr)   
+library(broom.mixed) 
+options(scipen = 999)
 
-This is a test
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+root.dir = "https://raw.githubusercontent.com/urbanSpatial/Public-Policy-Analytics-Landing/master/DATA/"
 
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+source("https://raw.githubusercontent.com/urbanSpatial/Public-Policy-Analytics-Landing/master/functions.r")
 
-```{r cars}
-summary(cars)
+census_api_key("a6d692af505769f28e39a3ac16b7dcbacb1dad58", overwrite = TRUE)
+
+palette5 <- c("#25CB10", "#5AB60C", "#8FA108",   "#C48C04", "#FA7800")
+
+palette6 <- c("#25CB10", "#5AB60C", "grey40",   "grey40", "#FA7800")
+
+theme_update(plot.title = element_text(hjust = 0.5))
+
+
+
 ```
-
-## Including Plots
-
-You can also embed plots, for example:
-
-```{r pressure, echo=FALSE}
-plot(pressure)
-```
-
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
