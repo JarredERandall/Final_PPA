@@ -99,12 +99,17 @@ View(nhoods)
 # OLS Regression Model
 
 ```{r read_data, results = FALSE, message = FALSE, warning = FALSE, error = FALSE}
-roomtype <- count(unique(joined$room_type))
-roomtype
+# Checking if we have too many categories in a variable
+roomtype <- unique(joined$room_type)
+length(roomtype)
 
+property_type <- unique(joined$property_type)
+length(property_type)
 
+sum(is.na(joined$square_feet))
 
-
+joined <- joined %>% mutate(extra_people_is_cost = ifelse(joined$extra_people %in% c("$0.00"), "No", "Yes"))
+View(joined)
 ```
 Regression Variables:
 
@@ -125,6 +130,17 @@ Non-Spatial (hedonic) Features:
 - break up the amenities
 - sqft is not there for all
 - review_scores_rating
+- costs extra?
+- is real bed?
+
+medhh income
+pct education
+pct immigrants
+marital status
+year built
+Profession
+
+
 
 Check instances for each variable
 
