@@ -62,6 +62,13 @@ listings_details <- read.csv("/Users/nohman/Documents/GitHub/PPA_Final_Airbnb/Da
 
 nhoods <- st_read("/Users/nohman/Documents/GitHub/PPA_Final_Airbnb/Data/Airbnb/neighbourhoods.geojson")
 
+joined <- left_join(listings, listings_details, by = "id", suffix=c("", ".y")) %>% select(-ends_with(".y"))
+
+unique_nhoods <- as.data.frame(unique(joined$neighbourhood_cleansed))
+View(unique_nhoods)
+
+
+
 
 
 ```
