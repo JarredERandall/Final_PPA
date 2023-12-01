@@ -55,7 +55,23 @@ theme_update(plot.title = element_text(hjust = 0.5))
 # Data
 
 ```{r read_data, results = FALSE, message = FALSE, warning = FALSE, error = FALSE}
+#JArred
+listings <- read.csv("C:\\Users\\fatbo\\OneDrive\\Desktop\\Airbnb\\Airbnb\\listings.csv")
 
+listings_details <- read.csv("C:\\Users\\fatbo\\OneDrive\\Desktop\\Airbnb\\Airbnb\\listings_details.csv")
+
+nhoods <- st_read("C:\\Users\\fatbo\\OneDrive\\Desktop\\Airbnb\\Airbnb\\neighbourhoods.geojson")
+
+joined <- left_join(listings, listings_details, by = "id", suffix=c("", ".y")) %>% select(-ends_with(".y"))
+
+
+
+```
+
+join nhood to joined
+
+```{r read_data, results = FALSE, message = FALSE, warning = FALSE, error = FALSE}
+#Nohman
 listings <- read.csv("/Users/nohman/Documents/GitHub/PPA_Final_Airbnb/Data/Airbnb/listings.csv")
 
 listings_details <- read.csv("/Users/nohman/Documents/GitHub/PPA_Final_Airbnb/Data/Airbnb/listings_details.csv")
@@ -72,6 +88,9 @@ View(unique_nhoods)
 
 
 ```
+
+
+
 View(nhoods)
 - Add sentiment analysis 
 - Add tract info
