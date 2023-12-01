@@ -90,6 +90,33 @@ View(unique_nhoods)
 ```
 
 
+```{r read_data, results = FALSE, message = FALSE, warning = FALSE, error = FALSE}
+#JArred
+listings <- read.csv("C:\\Users\\fatbo\\OneDrive\\Desktop\\Airbnb\\Airbnb\\listings.csv")
+
+listings_details <- read.csv("C:\\Users\\fatbo\\OneDrive\\Desktop\\Airbnb\\Airbnb\\listings_details.csv")
+
+nhoods <- st_read("C:\\Users\\fatbo\\OneDrive\\Desktop\\Airbnb\\Airbnb\\neighbourhoods.geojson")
+
+joined <- left_join(listings, listings_details, by = "id", suffix=c("", ".y")) %>% select(-ends_with(".y"))
+
+```
+
+join nhood to joined
+
+
+
+``` {r joined_nhood sf}
+
+joined_sf <- st_as_sf(joined, coords = c('longitude', 'latitude'), crs = 4326)  %>%
+  st_transform(st_crs(nhoods))
+  
+
+joined_nhood <- st_join(joined_sf, nhoods, join = st_within)
+
+st_crs(nhoods)
+```
+
 
 View(nhoods)
 - Add sentiment analysis 
