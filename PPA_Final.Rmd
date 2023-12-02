@@ -138,6 +138,21 @@ sum(is.na(joined$square_feet))
 joined <- joined %>% mutate(extra_people_is_cost = ifelse(joined$extra_people %in% c("$0.00"), "No", "Yes"))
 View(joined)
 ```
+
+```{r read_data, results = FALSE, message = FALSE, warning = FALSE, error = FALSE}
+# Creating amenities count. +1 since last word doesn't have comma
+joined2 <- joined
+
+amenities_count <- as.integer(str_count(joined2$amenities, ","))
+amenities_count <- ifelse(amenities_count > 0, amenities_count + 1, amenities_count)
+
+joined3 <- cbind(joined2, amenities_count)
+View(joined3)
+
+```
+
+
+
 Regression Variables:
 
 Spatial Features:
@@ -159,6 +174,8 @@ Non-Spatial (hedonic) Features:
 - review_scores_rating
 - costs extra?
 - is real bed?
+
+explain why we only did a count on ameniities
 
 medhh income
 pct education
