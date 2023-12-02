@@ -54,19 +54,7 @@ theme_update(plot.title = element_text(hjust = 0.5))
 
 # Data
 
-```{r read_data, results = FALSE, message = FALSE, warning = FALSE, error = FALSE}
-#JArred
-listings <- read.csv("C:\\Users\\fatbo\\OneDrive\\Desktop\\Airbnb\\Airbnb\\listings.csv")
 
-listings_details <- read.csv("C:\\Users\\fatbo\\OneDrive\\Desktop\\Airbnb\\Airbnb\\listings_details.csv")
-
-nhoods <- st_read("C:\\Users\\fatbo\\OneDrive\\Desktop\\Airbnb\\Airbnb\\neighbourhoods.geojson")
-
-joined <- left_join(listings, listings_details, by = "id", suffix=c("", ".y")) %>% select(-ends_with(".y"))
-
-
-
-```
 
 join nhood to joined
 
@@ -81,7 +69,8 @@ nhoods <- st_read("/Users/nohman/Documents/GitHub/PPA_Final_Airbnb/Data/Airbnb/n
 joined <- left_join(listings, listings_details, by = "id", suffix=c("", ".y")) %>% select(-ends_with(".y"))
 
 unique_nhoods <- as.data.frame(unique(joined$neighbourhood_cleansed))
-View(unique_nhoods)
+
+
 
 
 
@@ -90,17 +79,7 @@ View(unique_nhoods)
 ```
 
 
-```{r read_data, results = FALSE, message = FALSE, warning = FALSE, error = FALSE}
-#JArred
-listings <- read.csv("C:\\Users\\fatbo\\OneDrive\\Desktop\\Airbnb\\Airbnb\\listings.csv")
 
-listings_details <- read.csv("C:\\Users\\fatbo\\OneDrive\\Desktop\\Airbnb\\Airbnb\\listings_details.csv")
-
-nhoods <- st_read("C:\\Users\\fatbo\\OneDrive\\Desktop\\Airbnb\\Airbnb\\neighbourhoods.geojson")
-
-joined <- left_join(listings, listings_details, by = "id", suffix=c("", ".y")) %>% select(-ends_with(".y"))
-
-```
 
 join nhood to joined
 
@@ -108,11 +87,11 @@ join nhood to joined
 
 ``` {r joined_nhood sf}
 
-joined_sf <- st_as_sf(joined, coords = c('longitude', 'latitude'), crs = 4326)  %>%
+joined <- st_as_sf(joined, coords = c('longitude', 'latitude'), crs = 4326)  %>%
   st_transform(st_crs(nhoods))
   
 
-joined_nhood <- st_join(joined_sf, nhoods, join = st_within)
+joined <- st_join(joined, nhoods, join = st_within)
 
 st_crs(nhoods)
 ```
@@ -136,21 +115,59 @@ length(property_type)
 sum(is.na(joined$square_feet))
 
 joined <- joined %>% mutate(extra_people_is_cost = ifelse(joined$extra_people %in% c("$0.00"), "No", "Yes"))
-View(joined)
+
+
 ```
 
 ```{r read_data, results = FALSE, message = FALSE, warning = FALSE, error = FALSE}
 # Creating amenities count. +1 since last word doesn't have comma
-joined2 <- joined
 
-amenities_count <- as.integer(str_count(joined2$amenities, ","))
+
+
+amenities_count <- as.integer(str_count(joined$amenities, ","))
 amenities_count <- ifelse(amenities_count > 0, amenities_count + 1, amenities_count)
 
-joined3 <- cbind(joined2, amenities_count)
-View(joined3)
+joined <- cbind(joined, amenities_count) 
+
+# do this with mutate
+
+
+
+joined$weekly_price <- gsub("^.{0,1}", "", joined$weekly_price)
+joined$weekly_price <- as.numeric(ifelse(nchar(joined$weekly_price) == 0, "0", joined$weekly) %>% str_replace(",", ""))
+
+joined$monthly_price <- gsub("^.{0,1}", "", joined$weekly_price)
+joined$monthly_price <- as.numeric(ifelse(nchar(joined$monthly_price) == 0, "0", joined$monthly) %>% str_replace(",", ""))
+
+joined$security_deposit<- gsub("^.{0,1}", "", joined$security_deposit)
+joined$security_deposit <- as.numeric(ifelse(nchar(joined$security_deposit) == 0, NA, joined$security_deposit) %>% str_replace(",", ""))
+
+joined$cleaning_fee<- gsub("^.{0,1}", "", joined$cleaning_fee)
+joined$cleaning_fee <- as.numeric(ifelse(nchar(joined$cleaning_fee) == 0, NA, joined$cleaning_fee) %>% str_replace(",", ""))
+
+joined$daily_price <- ifelse(joined$weekly_price > 0, joined$weekly_price / 7, joined$monthly_price / 30)
+
+#joined$zipcode <- ifelse(str_count(joined$zipcode, "") != 0, str_extract(joined$zipcode, "^.{6}"), str_extract(joined$zipcode, "^.{4}"))
+
+joined$zipcode <- str_extract(joined$zipcode, "^.{4}")
+  
+
+joined <- joined %>% filter(daily_price > 0 & daily_price < 1000)
+
+
+
+var <- c("zipcode", "daily_price", "room_type", "host_is_superhost", "host_identity_verified", "accommodates", "beds", "bed_type", "cancellation_policy", "number_of_reviews", "property_type", "bathrooms", "bedrooms", "amenities_count", "review_scores_rating", "has_availability", "guests_included", "square_feet", "security_deposit", "cleaning_fee", "extra_people","neighbourhood.x", "availability_30")
+
+joined <- joined %>% select(all_of(var))
+
+joined$daily_price <- log(joined$daily_price)
+
+
+
 
 ```
 
+# Methods & Results
 
 
 Regression Variables:
@@ -174,8 +191,79 @@ Non-Spatial (hedonic) Features:
 - review_scores_rating
 - costs extra?
 - is real bed?
+- cleaning fee
+- cancellation policy 
 
-explain why we only did a count on ameniities
+```{r regression, results = 'hide', fig.align= 'center', warning = FALSE, message = FALSE, error = FALSE }
+inTrain <- createDataPartition(
+              y = paste(joined$daily_price,
+                        joined$room_type,
+                        joined$number_of_reviews),
+              p = .60, list = FALSE)
+
+
+joined_training <- joined[inTrain,] 
+
+joined_test <- joined[-inTrain,] 
+
+
+reg_training <- 
+  lm(daily_price ~ ., data = as.data.frame(joined_training) %>% 
+                             dplyr::select(daily_price,
+                                           room_type,
+                                           number_of_reviews,
+                                           property_type,
+                                           bathrooms,
+                                           bedrooms,
+                                           review_scores_rating,
+                                           cancellation_policy,
+                                           host_identity_verified,
+                                           accommodates,
+                                           beds,
+                                           bed_type,
+                                           host_is_superhost,
+                                           cleaning_fee,
+                                           security_deposit,
+                                           extra_people,
+                                           zipcode,
+                                           availability_30,
+                                           ))
+
+summary(reg_training)$r.squared
+
+
+```
+
+
+```{r read_data, results = FALSE, message = FALSE, warning = FALSE, error = FALSE}
+joined_test <-
+  joined_test %>%
+  mutate(Regression = "Baseline Regression",
+         daily_price.predict = predict(reg_training, joined_test),
+         daily_price.error = daily_price.predict - daily_price,
+         daily_price.abserror = abs(daily_price.predict - daily_price),
+         daily_price.ape = (abs(daily_price.predict - daily_price)) / daily_price.predict)%>%
+  filter(daily_price < 3000000, !is.na(daily_price.abserror))
+
+
+ggplot() +
+  geom_sf(data = joined, fill ="grey40" ,colour = "white") +
+  geom_sf(data = joined_test, aes(colour = q5(daily_price.error)),
+          size = 1) +
+  scale_colour_manual(values = palette6,
+                      labels = qBr(joined_test, "daily_price.error"),
+                      name = "Quintile \n Breaks")+
+   labs(title = "daily_price Amsterdam") +
+  mapTheme()
+
+```
+
+
+
+
+- explain why we only did a count on ameniities (because they range to very smimilar objects)
+- justify why we predict daily price with weekly (monthly usually has discount, most people book for fewer days. Prove this with data)
+
 
 medhh income
 pct education
@@ -183,6 +271,7 @@ pct immigrants
 marital status
 year built
 Profession
+distance to tourist attractions
 
 
 
@@ -193,10 +282,35 @@ Check instances for each variable
 Questions for Michael:
 1. Wants to see process of varibale choice (i.e. we run regression and then drop variables etc?)
 2. Is our idea valid?
+3. How does regression handle NA
 
 
 
 
+```{r read_data, results = FALSE, message = FALSE, warning = FALSE, error = FALSE}
+#JArred
+listings <- read.csv("C:\\Users\\fatbo\\OneDrive\\Desktop\\Airbnb\\Airbnb\\listings.csv")
+
+listings_details <- read.csv("C:\\Users\\fatbo\\OneDrive\\Desktop\\Airbnb\\Airbnb\\listings_details.csv")
+
+nhoods <- st_read("C:\\Users\\fatbo\\OneDrive\\Desktop\\Airbnb\\Airbnb\\neighbourhoods.geojson")
+
+joined <- left_join(listings, listings_details, by = "id", suffix=c("", ".y")) %>% select(-ends_with(".y"))
+
+```
 
 
 
+```{r read_data, results = FALSE, message = FALSE, warning = FALSE, error = FALSE}
+#JArred
+listings <- read.csv("C:\\Users\\fatbo\\OneDrive\\Desktop\\Airbnb\\Airbnb\\listings.csv")
+
+listings_details <- read.csv("C:\\Users\\fatbo\\OneDrive\\Desktop\\Airbnb\\Airbnb\\listings_details.csv")
+
+nhoods <- st_read("C:\\Users\\fatbo\\OneDrive\\Desktop\\Airbnb\\Airbnb\\neighbourhoods.geojson")
+
+joined <- left_join(listings, listings_details, by = "id", suffix=c("", ".y")) %>% select(-ends_with(".y"))
+
+
+
+```
