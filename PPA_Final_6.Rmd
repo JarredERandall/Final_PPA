@@ -53,62 +53,133 @@ theme_update(plot.title = element_text(hjust = 0.5))
 # Intro
 
 # Data
-
-
-
-join nhood to joined
-
+## Data Import
 ```{r read_data, results = FALSE, message = FALSE, warning = FALSE, error = FALSE}
-#Nohman
 listings <- read.csv("/Users/nohman/Documents/GitHub/PPA_Final_Airbnb/Data/Airbnb/listings.csv")
-
-listings_details <- read.csv("/Users/nohman/Documents/GitHub/PPA_Final_Airbnb/Data/Airbnb/listings_details.csv")
 
 nhoods <- st_read("/Users/nohman/Documents/GitHub/PPA_Final_Airbnb/Data/Airbnb/neighbourhoods.geojson")
 
-joined <- left_join(listings, listings_details, by = "id", suffix=c("", ".y")) %>% select(-ends_with(".y"))
+attraction_distance <- read.csv("/Users/nohman/Documents/GitHub/Final_PPA/Data/Airbnb/distance_attrac.csv")
 
-unique_nhoods <- as.data.frame(unique(joined$neighbourhood_cleansed))
+listings_details <- read.csv("/Users/nohman/Documents/GitHub/PPA_Final_Airbnb/Data/Airbnb/listings_details.csv")
+
+income <- read.csv("/Users/nohman/Documents/GitHub/Final_PPA/Data/Amsterdam_income.csv")
+```
 
 joined2 <- inner_join(joined, attraction_distance, by = "zipcode")
 
-
-
-
-
-```
-
-
-
+unique_nhoods <- as.data.frame(unique(joined$neighbourhood_cleansed))
 
 join nhood to joined
 
 
-
+## Data Wrangling
 ``` {r joined_nhood sf}
-
-
-joined <- st_as_sf(joined, coords = c('longitude', 'latitude'), crs = 4326)  %>%
+listings <- left_join(listings, listings_details, by = "id", suffix=c("", ".y")) %>% select(-ends_with(".y")) %>% st_as_sf(coords = c('longitude', 'latitude'), crs = 4326)  %>%
   st_transform(st_crs(nhoods))
+
+listings <- st_join(listings, nhoods, join = st_within, suffix=c("", ".y")) %>% select(-ends_with(".y"))
+
+#sf_income <- st_as_sf(income, coords = c("Longitude", "Latitude"), crs = 4326)%>%
+#  st_transform(st_crs(listings))
+
+#income_nhoods <- st_join(nhoods, sf_income) 
+#income_nhoods$Average.income.per.income.recipient  <- as.numeric(income_nhoods$Average.income.per.income.recipient %>% str_extract("^.{2}"))
+#View(income_nhoods)
+
+#income_nhoods %>% group_by(neighbourhood) %>% select()
+
+
+
+```
+
+```{r read_data, results = FALSE, message = FALSE, warning = FALSE, error = FALSE}
+# Adding the number of amenities per listing
+amenities_count <- as.integer(str_count(listings$amenities, ","))
+amenities_count <- ifelse(amenities_count > 0, amenities_count + 1, amenities_count)
+
+listings <- cbind(listings, amenities_count) 
+
+# Converting columns weekly price, monthly price, cleaning fee, and security deposit to numeric values
+for (i in sequence(4, 67, 1)) {
+  listings[[i]] <- gsub("^.{0,1}", "", listings[[i]])
+  listings[[i]] <- as.numeric(ifelse(nchar(listings[[i]]) == 0, "0", listings[[i]]) %>% str_replace(",", ""))
+}
+
+# Calculating a daily price from either weekly or monthly price
+joined$daily_price <- ifelse(joined$weekly_price > 0, joined$weekly_price / 7, joined$monthly_price / 30)
+
+# Cleaning the zipcode by taking the first four numbers and removing whatever is after
+joined$zipcode <- str_extract(joined$zipcode, "^.{4}")
   
+joined <- joined %>% filter(daily_price > 0 & daily_price < 1500)
 
-joined <- st_join(joined, nhoods, join = st_within)
+# Selecting a list of all relevant variables
+var <- c("zipcode", "daily_price", "room_type", "host_is_superhost", "host_identity_verified", "accommodates", "beds", "bed_type", "cancellation_policy", "number_of_reviews", "property_type", "bathrooms", "bedrooms", "amenities_count", "review_scores_rating", "has_availability", "guests_included", "security_deposit", "cleaning_fee", "extra_people","neighbourhood.x", "availability_30")
 
-sf_income <- st_as_sf(income, coords = c("Longitude", "Latitude"), crs = 4326)%>%
-  st_transform(st_crs(joined))
+joined <- joined %>% select(all_of(var))
 
-joined_nhood <- st_join(sf_income, nhoods, join = st_within)
 
-st_crs(nhoods)
+# Removing NA values for important regression variables. Annotate how many we lost (Jarred)
+joined <- joined %>% drop_na(cleaning_fee, security_deposit)
+
+
+
+
+
+
+```
+
+## Exploratory Data Analysis
+```{r read_data, results = FALSE, message = FALSE, warning = FALSE, error = FALSE}
+# Descriptive Statistics (Jarred) 
+joined$daily_price <- log(joined$daily_price)
+```
+
+```{r read_data, results = FALSE, message = FALSE, warning = FALSE, error = FALSE}
+# Show a of the unlogged daily price (Jarred) 
+joined$daily_price <- log(joined$daily_price)
+```
+
+```{r read_data, results = FALSE, message = FALSE, warning = FALSE, error = FALSE}
+# Log price by Property Type (Jarred) 
+joined$daily_price <- log(joined$daily_price)
+```
+
+```{r read_data, results = FALSE, message = FALSE, warning = FALSE, error = FALSE}
+# Correlation Matrix (Jarred) 
+joined$daily_price <- log(joined$daily_price)
+```
+
+```{r read_data, results = FALSE, message = FALSE, warning = FALSE, error = FALSE}
+# Log price by neighborhood (Jarred) 
+joined$daily_price <- log(joined$daily_price)
+```
+
+```{r read_data, results = FALSE, message = FALSE, warning = FALSE, error = FALSE}
+# Log price by Room Type (Jarred) 
+joined$daily_price <- log(joined$daily_price)
 ```
 
 
-View(nhoods)
-- Add sentiment analysis 
-- Add tract info
 
 
-# OLS Regression Model
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 ```{r read_data, results = FALSE, message = FALSE, warning = FALSE, error = FALSE}
 # Checking if we have too many categories in a variable
@@ -125,56 +196,6 @@ joined <- joined %>% mutate(extra_people_is_cost = ifelse(joined$extra_people %i
 
 ```
 
-```{r read_data, results = FALSE, message = FALSE, warning = FALSE, error = FALSE}
-# Creating amenities count. +1 since last word doesn't have comma
-
-
-
-amenities_count <- as.integer(str_count(joined$amenities, ","))
-amenities_count <- ifelse(amenities_count > 0, amenities_count + 1, amenities_count)
-
-joined <- cbind(joined, amenities_count) 
-View(joined)
-
-# do this with mutate
-
-
-
-joined$weekly_price <- gsub("^.{0,1}", "", joined$weekly_price)
-joined$weekly_price <- as.numeric(ifelse(nchar(joined$weekly_price) == 0, "0", joined$weekly) %>% str_replace(",", ""))
-
-joined$monthly_price <- gsub("^.{0,1}", "", joined$weekly_price)
-joined$monthly_price <- as.numeric(ifelse(nchar(joined$monthly_price) == 0, "0", joined$monthly) %>% str_replace(",", ""))
-
-joined$security_deposit<- gsub("^.{0,1}", "", joined$security_deposit)
-joined$security_deposit <- as.numeric(ifelse(nchar(joined$security_deposit) == 0, NA, joined$security_deposit) %>% str_replace(",", ""))
-
-joined$cleaning_fee<- gsub("^.{0,1}", "", joined$cleaning_fee)
-joined$cleaning_fee <- as.numeric(ifelse(nchar(joined$cleaning_fee) == 0, NA, joined$cleaning_fee) %>% str_replace(",", ""))
-
-joined$daily_price <- ifelse(joined$weekly_price > 0, joined$weekly_price / 7, joined$monthly_price / 30)
-
-#joined$zipcode <- ifelse(str_count(joined$zipcode, "") != 0, str_extract(joined$zipcode, "^.{6}"), str_extract(joined$zipcode, "^.{4}"))
-
-joined$zipcode <- str_extract(joined$zipcode, "^.{4}")
-  
-
-joined <- joined %>% filter(daily_price > 0 & daily_price < 1500)
-
-
-var <- c("zipcode", "daily_price", "room_type", "host_is_superhost", "host_identity_verified", "accommodates", "beds", "bed_type", "cancellation_policy", "number_of_reviews", "property_type", "bathrooms", "bedrooms", "amenities_count", "review_scores_rating", "has_availability", "guests_included", "security_deposit", "cleaning_fee", "extra_people","neighbourhood.x", "availability_30")
-
-joined <- joined %>% select(all_of(var))
-
-joined$daily_price <- log(joined$daily_price)
-
-joined <- joined %>% drop_na(cleaning_fee, security_deposit)
-
-
-
-
-
-```
 
 # Methods & Results
 
