@@ -70,7 +70,7 @@ joined <- left_join(listings, listings_details, by = "id", suffix=c("", ".y")) %
 
 unique_nhoods <- as.data.frame(unique(joined$neighbourhood_cleansed))
 
-
+joined2 <- inner_join(joined, attraction_distance, by = "zipcode")
 
 
 
@@ -86,6 +86,8 @@ join nhood to joined
 
 
 ``` {r joined_nhood sf}
+
+
 
 joined <- st_as_sf(joined, coords = c('longitude', 'latitude'), crs = 4326)  %>%
   st_transform(st_crs(nhoods))
@@ -425,6 +427,6 @@ nhoods <- st_read("C:\\Users\\fatbo\\OneDrive\\Desktop\\Airbnb\\Airbnb\\neighbou
 
 joined <- left_join(listings, listings_details, by = "id", suffix=c("", ".y")) %>% select(-ends_with(".y"))
 
-
+attraction_distance <- read.csv("C:\\Users\\fatbo\\OneDrive\\Documents\\GitHub\\Final_PPA\\Data\\Airbnb\\distance_attrac.csv")
 
 ```
