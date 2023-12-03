@@ -1,5 +1,5 @@
 ---
-title: "Fairbnb"
+title: "FairBnB"
 output: html_document
 date: "2023-12-01"
 ---
@@ -75,22 +75,14 @@ join nhood to joined
 
 ## Data Wrangling
 ``` {r joined_nhood sf}
-listings <- left_join(listings, listings_details, by = "id", suffix=c("", ".y")) %>% select(-ends_with(".y")) %>% st_as_sf(coords = c('longitude', 'latitude'), crs = 4326)  %>%
+attraction_distance <- attraction_distance %>% transform(zipcode = as.character(zipcode))
+
+listings <- left_join(listings, listings_details, by = "id", suffix=c("", ".y")) %>% select(-ends_with(".y"))
+
+listings <- left_join(listings, attraction_distance, by = "zipcode", suffix=c("", ".y")) %>% select(-ends_with(".y")) %>% st_as_sf(coords = c('longitude', 'latitude'), crs = 4326)  %>%
   st_transform(st_crs(nhoods))
 
 listings <- st_join(listings, nhoods, join = st_within, suffix=c("", ".y")) %>% select(-ends_with(".y"))
-
-#sf_income <- st_as_sf(income, coords = c("Longitude", "Latitude"), crs = 4326)%>%
-#  st_transform(st_crs(listings))
-
-#income_nhoods <- st_join(nhoods, sf_income) 
-#income_nhoods$Average.income.per.income.recipient  <- as.numeric(income_nhoods$Average.income.per.income.recipient %>% str_extract("^.{2}"))
-#View(income_nhoods)
-
-#income_nhoods %>% group_by(neighbourhood) %>% select()
-
-
-
 ```
 
 ```{r read_data, results = FALSE, message = FALSE, warning = FALSE, error = FALSE}
@@ -106,8 +98,11 @@ for (i in sequence(4, 67, 1)) {
   listings[[i]] <- as.numeric(ifelse(nchar(listings[[i]]) == 0, "0", listings[[i]]) %>% str_replace(",", ""))
 }
 
+# Remove rows with no rent data
+listings <- listings %>% filter(weekly_price > 0 | monthly_price > 0)
+
 # Calculating a daily price from either weekly or monthly price
-listings$daily_price <- ifelse(listings$weekly_price > 0, joined$weekly_price / 7, listings$monthly_price / 30)
+listings$daily_price <- ifelse(listings$weekly_price > 0, listings$weekly_price / 7, listings$monthly_price / 30)
 
 # Cleaning the zipcode by taking the first four numbers and removing whatever is after
 listings$zipcode <- str_extract(listings$zipcode, "^.{4}")
@@ -115,83 +110,51 @@ listings$zipcode <- str_extract(listings$zipcode, "^.{4}")
 listings <- listings %>% filter(daily_price > 0 & daily_price < 1500)
 
 # Selecting a list of all relevant variables
-var <- c("zipcode", "daily_price", "room_type", "host_is_superhost", "host_identity_verified", "accommodates", "beds", "bed_type", "cancellation_policy", "number_of_reviews", "property_type", "bathrooms", "bedrooms", "amenities_count", "review_scores_rating", "has_availability", "guests_included", "security_deposit", "cleaning_fee", "extra_people","neighbourhood", "availability_30")
+var <- c("zipcode", "daily_price", "room_type", "host_is_superhost", "host_identity_verified", "accommodates", "beds", "bed_type", "cancellation_policy", "number_of_reviews", "property_type", "bathrooms", "bedrooms", "amenities_count", "review_scores_rating", "has_availability", "guests_included", "security_deposit", "cleaning_fee", "extra_people","neighbourhood", "availability_30", "weekly_price", "monthly_price", "near_ATTRAC", "near_museum", "near_Performing_arts")
 
-listings <- listings %>% select(all_of(var))
+listings <- listings %>% select(all_of(var)) 
 
 
 # Removing NA values for important regression variables. Annotate how many we lost (Jarred)
 listings <- listings %>% drop_na(cleaning_fee, security_deposit)
-
-
-
-
-
-
 ```
 
 ## Exploratory Data Analysis
 ```{r read_data, results = FALSE, message = FALSE, warning = FALSE, error = FALSE}
 # Descriptive Statistics (Jarred) 
-joined$daily_price <- log(joined$daily_price)
+
 ```
 
 ```{r read_data, results = FALSE, message = FALSE, warning = FALSE, error = FALSE}
 # Show a of the unlogged daily price (Jarred) 
-joined$daily_price <- log(joined$daily_price)
+listings$daily_price <- log(listings$daily_price)
 ```
 
 ```{r read_data, results = FALSE, message = FALSE, warning = FALSE, error = FALSE}
 # Log price by Property Type (Jarred) 
-joined$daily_price <- log(joined$daily_price)
+
 ```
 
 ```{r read_data, results = FALSE, message = FALSE, warning = FALSE, error = FALSE}
 # Correlation Matrix (Jarred) 
-joined$daily_price <- log(joined$daily_price)
+
 ```
 
 ```{r read_data, results = FALSE, message = FALSE, warning = FALSE, error = FALSE}
 # Log price by neighborhood (Jarred) 
-joined$daily_price <- log(joined$daily_price)
+
 ```
 
 ```{r read_data, results = FALSE, message = FALSE, warning = FALSE, error = FALSE}
 # Log price by Room Type (Jarred) 
-joined$daily_price <- log(joined$daily_price)
+
 ```
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
 ```{r read_data, results = FALSE, message = FALSE, warning = FALSE, error = FALSE}
 # Checking if we have too many categories in a variable
-roomtype <- unique(joined$room_type)
-length(roomtype)
 
-property_type <- unique(joined$property_type)
-length(property_type)
-
-sum(is.na(joined$square_feet))
-
-joined <- joined %>% mutate(extra_people_is_cost = ifelse(joined$extra_people %in% c("$0.00"), "No", "Yes"))
 
 
 ```
@@ -227,33 +190,33 @@ Non-Spatial (hedonic) Features:
 # Training Regression
 
 ```{r regression, results = 'hide', fig.align= 'center', warning = FALSE, message = FALSE, error = FALSE }
-set.seed(100)
 
 inTrain <- createDataPartition(
-              y = paste(joined$daily_price,
-                        joined$room_type,
-                        joined$number_of_reviews),
-              p = .60, list = FALSE)
+              y = paste(listings$daily_price),
+              p = .6, list = FALSE)
 
-joined_training <- joined[inTrain,] 
+listings_train <- listings[inTrain,] 
 
-joined_test <- joined[-inTrain,] 
+listings_test <- listings[-inTrain,] 
+
+nrow(listings_test)
 
 
-coords.test.training <-  st_coordinates(joined_training) 
+coords.test.training <-  st_coordinates(listings_train) 
 
-neighborList.training <- knn2nb(knearneigh(coords.test.training, 10))
+neighborList.training <- knn2nb(knearneigh(coords.test.training, 5))
 
 spatialWeights.training <- nb2listw(neighborList.training, style="W")
 
 
-joined_training <- joined_training %>% mutate(k_nearest_price = lag.listw(spatialWeights.training, daily_price) / accommodates)
+listings_train <- listings_train %>% mutate(k_nearest_price = lag.listw(spatialWeights.training, daily_price) / accommodates)
 
 
-  reg_training <- 
-    lm(daily_price ~ ., data = as.data.frame(joined_training) %>% 
+  reg_train <- 
+    lm(daily_price ~ ., data = as.data.frame(listings_train) %>% 
                                dplyr::select(daily_price,
                                            room_type,
+                                           near_ATTRAC,
                                            k_nearest_price,
                                            number_of_reviews,
                                            property_type,
@@ -271,47 +234,47 @@ joined_training <- joined_training %>% mutate(k_nearest_price = lag.listw(spatia
                                            extra_people,
                                            zipcode,
                                            availability_30,
-                                           neighbourhood.x))
+                                           neighbourhood))
   
-summary(reg_training)$r.squared
+summary(reg_train)$r.squared
 ```
 
 # Training Regression Results
 
 ```{r result_traiining_set, fig.align= 'center', warning = FALSE, message = FALSE, error = FALSE}
-joined_training <-
-  joined_training %>%
+listings_train <-
+  listings_train %>%
   mutate(Regression = "Baseline Regression",
-         daily_price.predict = exp(predict(reg_training, joined_training)),
+         daily_price.predict = exp(predict(reg_train, listings_train)),
          daily_price.error = daily_price.predict - exp(daily_price),
          daily_price.abserror = abs(daily_price.predict - exp(daily_price)),
          daily_price.ape = (abs(daily_price.predict - exp(daily_price))) / daily_price.predict)%>%
-  filter(daily_price < 3000000, !is.na(daily_price.abserror))
+  filter(!is.na(daily_price.abserror))
 
-results_train <- data.frame(MAE = mean(joined_training$sale_price.abserror, na.rm = T), MAPE =  mean(joined_training$sale_price.ape, na.rm = T))
+
+results_train <- data.frame(MAE = mean(listings_train$daily_price.abserror, na.rm = T), MAPE =  mean(listings_train$daily_price.ape, na.rm = T))
 
 
 results_train %>%
   kbl(caption = "Training Results") %>%
   kable_classic(full_width = F, html_font = "Cambria")
-
 ```
 
 # Test Regression
 ```{r read_data, results = FALSE, message = FALSE, warning = FALSE, error = FALSE}
 
-coords.test.2 <-  st_coordinates(joined_test) 
+coords.test.2 <-  st_coordinates(listings_test) 
 
 neighborList.test.2 <- knn2nb(knearneigh(coords.test.2, 3))
 
 spatialWeights.test.2 <- nb2listw(neighborList.test.2, style="W")
 
-joined_test <- joined_test %>% mutate(k_nearest_price = lag.listw(spatialWeights.test.2, daily_price) / accommodates)
+listings_test <- listings_test %>% mutate(k_nearest_price = lag.listw(spatialWeights.test.2, daily_price) / accommodates)
 
-joined_test <-
-  joined_test %>%
+listings_test <-
+  listings_test %>%
   mutate(Regression = "Baseline Regression",
-         daily_price.predict = exp(predict(reg_training, joined_test)),
+         daily_price.predict = exp(predict(reg_train, listings_test)),
          daily_price.error = daily_price.predict - exp(daily_price),
          daily_price.abserror = abs(daily_price.predict - exp(daily_price)),
          daily_price.ape = (abs(daily_price.predict - exp(daily_price))) / daily_price.predict)%>%
@@ -423,22 +386,6 @@ Check instances for each variable
 Questions for Michael:
 1. Wants to see process of varibale choice (i.e. we run regression and then drop variables etc?)
 2. Is our idea valid?
-3. How does regression handle NA
-
-
-
-
-```{r read_data, results = FALSE, message = FALSE, warning = FALSE, error = FALSE}
-#JArred
-listings <- read.csv("C:\\Users\\fatbo\\OneDrive\\Desktop\\Airbnb\\Airbnb\\listings.csv")
-
-listings_details <- read.csv("C:\\Users\\fatbo\\OneDrive\\Desktop\\Airbnb\\Airbnb\\listings_details.csv")
-
-nhoods <- st_read("C:\\Users\\fatbo\\OneDrive\\Desktop\\Airbnb\\Airbnb\\neighbourhoods.geojson")
-
-joined <- left_join(listings, listings_details, by = "id", suffix=c("", ".y")) %>% select(-ends_with(".y"))
-
-```
 
 
 
