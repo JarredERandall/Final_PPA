@@ -128,6 +128,7 @@ amenities_count <- as.integer(str_count(joined$amenities, ","))
 amenities_count <- ifelse(amenities_count > 0, amenities_count + 1, amenities_count)
 
 joined <- cbind(joined, amenities_count) 
+View(joined)
 
 # do this with mutate
 
@@ -152,15 +153,17 @@ joined$daily_price <- ifelse(joined$weekly_price > 0, joined$weekly_price / 7, j
 joined$zipcode <- str_extract(joined$zipcode, "^.{4}")
   
 
-joined <- joined %>% filter(daily_price > 0 & daily_price < 1000)
+joined <- joined %>% filter(daily_price > 0 & daily_price < 1500)
 
 
-
-var <- c("zipcode", "daily_price", "room_type", "host_is_superhost", "host_identity_verified", "accommodates", "beds", "bed_type", "cancellation_policy", "number_of_reviews", "property_type", "bathrooms", "bedrooms", "amenities_count", "review_scores_rating", "has_availability", "guests_included", "square_feet", "security_deposit", "cleaning_fee", "extra_people","neighbourhood.x", "availability_30")
+var <- c("zipcode", "daily_price", "room_type", "host_is_superhost", "host_identity_verified", "accommodates", "beds", "bed_type", "cancellation_policy", "number_of_reviews", "property_type", "bathrooms", "bedrooms", "amenities_count", "review_scores_rating", "has_availability", "guests_included", "security_deposit", "cleaning_fee", "extra_people","neighbourhood.x", "availability_30")
 
 joined <- joined %>% select(all_of(var))
 
 joined$daily_price <- log(joined$daily_price)
+
+joined <- joined %>% drop_na(cleaning_fee, security_deposit)
+
 
 
 
@@ -194,23 +197,37 @@ Non-Spatial (hedonic) Features:
 - cleaning fee
 - cancellation policy 
 
+# Training Regression
+
 ```{r regression, results = 'hide', fig.align= 'center', warning = FALSE, message = FALSE, error = FALSE }
+set.seed(100)
+
 inTrain <- createDataPartition(
               y = paste(joined$daily_price,
                         joined$room_type,
                         joined$number_of_reviews),
               p = .60, list = FALSE)
 
-
 joined_training <- joined[inTrain,] 
 
 joined_test <- joined[-inTrain,] 
 
 
-reg_training <- 
-  lm(daily_price ~ ., data = as.data.frame(joined_training) %>% 
-                             dplyr::select(daily_price,
+coords.test.training <-  st_coordinates(joined_training) 
+
+neighborList.training <- knn2nb(knearneigh(coords.test.training, 10))
+
+spatialWeights.training <- nb2listw(neighborList.training, style="W")
+
+
+joined_training <- joined_training %>% mutate(k_nearest_price = lag.listw(spatialWeights.training, daily_price) / accommodates)
+
+
+  reg_training <- 
+    lm(daily_price ~ ., data = as.data.frame(joined_training) %>% 
+                               dplyr::select(daily_price,
                                            room_type,
+                                           k_nearest_price,
                                            number_of_reviews,
                                            property_type,
                                            bathrooms,
@@ -227,22 +244,50 @@ reg_training <-
                                            extra_people,
                                            zipcode,
                                            availability_30,
-                                           ))
-
+                                           neighbourhood.x))
+  
 summary(reg_training)$r.squared
+```
 
+# Training Regression Results
+
+```{r result_traiining_set, fig.align= 'center', warning = FALSE, message = FALSE, error = FALSE}
+joined_training <-
+  joined_training %>%
+  mutate(Regression = "Baseline Regression",
+         daily_price.predict = exp(predict(reg_training, joined_training)),
+         daily_price.error = daily_price.predict - exp(daily_price),
+         daily_price.abserror = abs(daily_price.predict - exp(daily_price)),
+         daily_price.ape = (abs(daily_price.predict - exp(daily_price))) / daily_price.predict)%>%
+  filter(daily_price < 3000000, !is.na(daily_price.abserror))
+
+results_train <- data.frame(MAE = mean(joined_training$sale_price.abserror, na.rm = T), MAPE =  mean(joined_training$sale_price.ape, na.rm = T))
+
+
+results_train %>%
+  kbl(caption = "Training Results") %>%
+  kable_classic(full_width = F, html_font = "Cambria")
 
 ```
 
-
+# Test Regression
 ```{r read_data, results = FALSE, message = FALSE, warning = FALSE, error = FALSE}
+
+coords.test.2 <-  st_coordinates(joined_test) 
+
+neighborList.test.2 <- knn2nb(knearneigh(coords.test.2, 3))
+
+spatialWeights.test.2 <- nb2listw(neighborList.test.2, style="W")
+
+joined_test <- joined_test %>% mutate(k_nearest_price = lag.listw(spatialWeights.test.2, daily_price) / accommodates)
+
 joined_test <-
   joined_test %>%
   mutate(Regression = "Baseline Regression",
-         daily_price.predict = predict(reg_training, joined_test),
-         daily_price.error = daily_price.predict - daily_price,
-         daily_price.abserror = abs(daily_price.predict - daily_price),
-         daily_price.ape = (abs(daily_price.predict - daily_price)) / daily_price.predict)%>%
+         daily_price.predict = exp(predict(reg_training, joined_test)),
+         daily_price.error = daily_price.predict - exp(daily_price),
+         daily_price.abserror = abs(daily_price.predict - exp(daily_price)),
+         daily_price.ape = (abs(daily_price.predict - exp(daily_price))) / daily_price.predict)%>%
   filter(daily_price < 3000000, !is.na(daily_price.abserror))
 
 
@@ -255,8 +300,77 @@ ggplot() +
                       name = "Quintile \n Breaks")+
    labs(title = "daily_price Amsterdam") +
   mapTheme()
+```
+
+
+# Moran's I Test
+```{r moran_mc, fig.align= 'center', warning = FALSE, message = FALSE, error = FALSE}
+
+moranTest <- moran.mc(joined_test$daily_price.error, 
+                      spatialWeights.test.2, nsim = 999)
+
+morans_plot <-ggplot(as.data.frame(moranTest$res[c(1:999)]), aes(moranTest$res[c(1:999)])) +
+  geom_histogram(binwidth = 0.01) +
+  geom_vline(aes(xintercept = moranTest$statistic), colour = "#FA7800",size=1) +
+  scale_x_continuous(limits = c(-1, 1)) +
+  labs(title="Observed and permuted Moran's I",
+       subtitle= "Observed Moran's I in orange",
+       x="Moran's I",
+       y="Count") +
+  plotTheme()
+
+morans_plot
+```
+
+
+## Cross-Validation
+```{r result_cross_validation, results = 'hide', fig.align= 'center', warning = FALSE, message = FALSE, error = FALSE}
+fitControl <- trainControl(method = "cv", number = 100)
+set.seed(825)
+
+reg.cv <- 
+  train(sale_price ~ ., data = st_drop_geometry(philly.training) %>% 
+                               dplyr::select(sale_price, 
+                                             k_nearest_price,
+                                             pctWhite.2020,
+                                             pctGrad.2020,
+                                             med_HH_Income.2020,  
+                                             total_livable_area,
+                                             frontage, 
+                                             exterior_condition,
+                                             interior_condition,
+                                             number_of_bathrooms,
+                                             quality_grade,
+                                             basements,
+                                             garage_spaces,
+                                             sewer, separate_utilities,
+                                             street_designation,
+                                             building_code_description_new, 
+                                             view_type, 
+                                             general_construction, 
+                                             stories, 
+                                             number_of_bedrooms), 
+     method = "lm", trControl = fitControl, na.action = na.pass)
+
+reg.cv$resample[1:100,]
+
+
+
 
 ```
+
+
+
+```{r result_cross_validation_graph, fig.align= 'center', warning = FALSE, message = FALSE, error = FALSE}
+ggplot(reg.cv$resample) +
+  aes(MAE) +
+  geom_histogram(bins=15)
+```
+
+
+
+
+
 
 
 
