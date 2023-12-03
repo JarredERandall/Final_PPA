@@ -123,30 +123,120 @@ listings <- listings %>% drop_na(cleaning_fee, security_deposit)
 ```{r read_data, results = FALSE, message = FALSE, warning = FALSE, error = FALSE}
 # Descriptive Statistics (Jarred) 
 
+# Descriptive Statistics (Jarred) 
+
+
+
+install.packages("summarytools")
+library(summarytools)
+
+
+variables_to_summarize <- c("daily_price","room_type","near_ATTRAC", "k_nearest_price",
+                            "number_of_reviews","property_type", "bathrooms", "bedrooms",
+                            "review_scores_rating", "cancellation_policy", "host_identity_verified",
+                            "accommodates", "beds", "bed_type", "host_is_superhost", "cleaning_fee",
+                            "security_deposit", "extra_people", "zipcode", "availability_30", "neighbourhood")
+
+
+summary_stats <- descr(listings[, variables_to_summarize], stats = "common")  
+summary_table <- t(summary_stats)
+
+
+rounded_summary <- t(apply(summary_table, 1, function(x) {
+  if (all(is.numeric(x))) {
+    return(round(x, 2))
+  } else {
+    return(x)
+  }
+}))
+
+# Create the table using kableExtra
+rounded_summary %>%
+  kbl(caption = "Summary Statistics") %>%
+  kable_classic(full_width = F, html_font = "Cambria")
+ 
+
 ```
 
 ```{r read_data, results = FALSE, message = FALSE, warning = FALSE, error = FALSE}
 # Show a of the unlogged daily price (Jarred) 
-listings$daily_price <- log(listings$daily_price)
+
+ggplot(listings, aes(x=daily_price)) + 
+    geom_histogram(fill="blue") +
+    ggtitle("Airbnb Daily Price Distribution") 
 ```
 
 ```{r read_data, results = FALSE, message = FALSE, warning = FALSE, error = FALSE}
 # Log price by Property Type (Jarred) 
+listings$daily_price <- log(listings$daily_price)
+
+ggplot(listings, aes(x=daily_price)) + 
+    geom_histogram(fill="blue") +
+    ggtitle("Log of Daily Price Distribution") 
 
 ```
 
 ```{r read_data, results = FALSE, message = FALSE, warning = FALSE, error = FALSE}
 # Correlation Matrix (Jarred) 
 
+variables_to_summarize <- 
+  select_if(st_drop_geometry(listings), is.numeric) %>% na.omit()
+
+variables_to_summarize <- select_if(st_drop_geometry(listings), is.numeric) %>%
+  na.omit()
+
+
+ggcorrplot(
+  round(cor(variables_to_summarize), 1), 
+  p.mat = cor_pmat(variables_to_summarize),
+  colors = c("#25CB10", "white", "#FA7800"),
+  type="lower",
+  insig = "blank") +  
+    labs(title = "Correlation across numeric variables") 
 ```
 
 ```{r read_data, results = FALSE, message = FALSE, warning = FALSE, error = FALSE}
 # Log price by neighborhood (Jarred) 
+listings$neighbourhood <- factor(listings$neighbourhood)
+
+
+
+
+colors <- rainbow(length(unique(listings$neighbourhood)))
+faded_colors <- adjustcolor(colors, alpha.f = 0.4) 
+
+ggplot(data = listings, aes(x = neighbourhood, y = log(daily_price), fill = neighbourhood)) + 
+  geom_boxplot() +
+  scale_fill_manual(values = faded_colors, name = "Neighborhoods") + 
+  theme_minimal() +
+  labs(y = "Logarithm of Price", x = "", title = "Logarithm of Daily Price by Neighborhood.") +
+  theme(
+    axis.text.x = element_blank(), 
+    legend.position = "bottom", 
+    legend.title.align = 0.5, 
+    plot.title = element_text(hjust = 0.5) 
+  ) +
+  guides(fill = guide_legend(nrow = 5, byrow = TRUE, title.position = "top")) 
 
 ```
 
 ```{r read_data, results = FALSE, message = FALSE, warning = FALSE, error = FALSE}
 # Log price by Room Type (Jarred) 
+
+faded_colors2 <- adjustcolor(colors, alpha.f = 0.6) 
+
+ggplot(data = listings, aes(x = room_type, y = log(daily_price), fill = room_type)) + 
+  geom_boxplot() +
+  scale_fill_manual(values = faded_colors2, name = "Listing Type") + 
+  theme_minimal() +
+  labs(y = "Logarithm of Price", x = "", title = "Logarithm of Daily Price by Listing Type") +
+  theme(
+    axis.text.x = element_blank(), 
+    legend.position = "bottom", 
+    legend.title.align = 0.5, 
+    plot.title = element_text(hjust = 0.5) 
+  ) +
+  guides(fill = guide_legend(nrow =1, byrow = TRUE, title.position = "top")) 
 
 ```
 
@@ -155,10 +245,70 @@ listings$daily_price <- log(listings$daily_price)
 ```{r read_data, results = FALSE, message = FALSE, warning = FALSE, error = FALSE}
 # Checking if we have too many categories in a variable
 
+roomtype <- unique(listings$room_type)
+length(roomtype)
+
+property_type <- unique(listings$property_type)
+length(property_type)
+
+property_type <- unique(listings$property_type)
+length(property_type)
+
+sum(is.na(joined$square_feet))
+
+joined <- joined %>% mutate(extra_people_is_cost = ifelse(joined$extra_people %in% c("$0.00"), "No", "Yes"))
+
+
+
+variables_to_summarize <- c("room_type", "daily_price", "beds", "accommodates", "bed_type",
+                            "bathrooms", "bedrooms", "amenities_count", "review_scores_rating")
+
+
+unique_values_df <- data.frame(Variable = character(), Unique_Values = integer(), stringsAsFactors = FALSE)
+
+
+for (var in variables_to_summarize) {
+  unique_values_df <- rbind(unique_values_df, data.frame(Variable = var, Unique_Values = length(unique(listings[[var]]))))
+}
+
+
+unique_values_df %>%
+  kbl(caption = "Variable Values") %>%
+  kable_classic(full_width = F, html_font = "Cambria")
 
 
 ```
 
+```{r map_1}
+avg_price_by_neighbourhood <- listings %>%
+  group_by(neighbourhood) %>%
+  summarize(average_price = mean(daily_price, na.rm = TRUE))
+
+neighbourhood_boundaries <- nhoods
+
+neighbourhood_boundaries$neighbourhood <- as.character(neighbourhood_boundaries$neighbourhood)
+avg_price_by_neighbourhood$neighbourhood <- as.character(avg_price_by_neighbourhood$neighbourhood)
+
+
+merged_data_sf <- st_join(neighbourhood_boundaries, avg_price_by_neighbourhood)
+
+
+
+
+
+ggplot() +
+  geom_sf(data = merged_data_sf, aes(fill = average_price), color = NA) +
+  scale_fill_gradient(low = "white",high = "darkred") +
+  labs(title = "average Daily Price by Neighborhood") +
+  theme( 
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    axis.ticks = element_blank(),
+    axis.text = element_blank(),
+    )
+
+
+```
 
 # Methods & Results
 
