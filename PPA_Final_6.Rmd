@@ -107,21 +107,21 @@ for (i in sequence(4, 67, 1)) {
 }
 
 # Calculating a daily price from either weekly or monthly price
-joined$daily_price <- ifelse(joined$weekly_price > 0, joined$weekly_price / 7, joined$monthly_price / 30)
+listings$daily_price <- ifelse(listings$weekly_price > 0, joined$weekly_price / 7, listings$monthly_price / 30)
 
 # Cleaning the zipcode by taking the first four numbers and removing whatever is after
-joined$zipcode <- str_extract(joined$zipcode, "^.{4}")
+listings$zipcode <- str_extract(listings$zipcode, "^.{4}")
   
-joined <- joined %>% filter(daily_price > 0 & daily_price < 1500)
+listings <- listings %>% filter(daily_price > 0 & daily_price < 1500)
 
 # Selecting a list of all relevant variables
-var <- c("zipcode", "daily_price", "room_type", "host_is_superhost", "host_identity_verified", "accommodates", "beds", "bed_type", "cancellation_policy", "number_of_reviews", "property_type", "bathrooms", "bedrooms", "amenities_count", "review_scores_rating", "has_availability", "guests_included", "security_deposit", "cleaning_fee", "extra_people","neighbourhood.x", "availability_30")
+var <- c("zipcode", "daily_price", "room_type", "host_is_superhost", "host_identity_verified", "accommodates", "beds", "bed_type", "cancellation_policy", "number_of_reviews", "property_type", "bathrooms", "bedrooms", "amenities_count", "review_scores_rating", "has_availability", "guests_included", "security_deposit", "cleaning_fee", "extra_people","neighbourhood", "availability_30")
 
-joined <- joined %>% select(all_of(var))
+listings <- listings %>% select(all_of(var))
 
 
 # Removing NA values for important regression variables. Annotate how many we lost (Jarred)
-joined <- joined %>% drop_na(cleaning_fee, security_deposit)
+listings <- listings %>% drop_na(cleaning_fee, security_deposit)
 
 
 
