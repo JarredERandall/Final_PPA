@@ -317,24 +317,6 @@ avg_price_by_neighbourhood$neighbourhood <- as.character(avg_price_by_neighbourh
 
 merged_data_sf <- st_join(neighbourhood_boundaries, avg_price_by_neighbourhood)
 
-
-scales::show_col(c("#9DBF9E", "#A84268", "#FCB97D", "#C0BCB5", "#4A6C6F", "#FF5E5B"))
-color
-
-merged_data_sf %>% 
-  ggplot() +
-  geom_sf(
-    aes(fill = average_price), 
-    lwd = 0,
-    colour = "white") +
-  scale_fill_gradientn(
-    colors = c("#9DBF9E", "#FCB97D", "#A84268"),
-    na.value = "grey80",
-    oob = scales::squish,
-    labels = scales::label_comma(),  # You can use different label formatting functions here
-    name = "Active STRs as share of total dwellings") +
-  # Set a completely blank theme, to get rid of all background and axis elements
-  theme_void()
  
 pal2 <- c("#9DBF9E", "#A84268", "#FCB97D", "#C0BCB5", "#4A6C6F", "#FF5E5B")
 
@@ -367,7 +349,6 @@ ggplot() +
     legend.title = element_text(margin = margin(b = 10))  # Adjust the bottom margin of the legend title
   )
 
-hist((listings$daily_price))
 
 ```
 
