@@ -10,7 +10,6 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ```{r setup, include=FALSE, class.source = 'fold-show'}
 knitr::opts_chunk$set(echo = TRUE)
-
 library(tidyverse)
 library(tidycensus)
 library(sf)
@@ -65,6 +64,8 @@ attraction_distance <- read.csv("/Users/nohman/Documents/GitHub/Final_PPA/Data/A
 listings_details <- read.csv("/Users/nohman/Documents/GitHub/PPA_Final_Airbnb/Data/Airbnb/listings_details.csv")
 
 income <- read.csv("/Users/nohman/Documents/GitHub/Final_PPA/Data/Amsterdam_income.csv")
+
+census <- read.csv("/Users/nohman/Documents/GitHub/Final_PPA/Data/final_census.csv")
 ```
 
 joined2 <- inner_join(joined, attraction_distance, by = "zipcode")
@@ -76,6 +77,7 @@ join nhood to joined
 
 ## Data Wrangling
 ``` {r joined_nhood sf}
+# Joining data sets, converting to crs
 attraction_distance <- attraction_distance %>% transform(zipcode = as.character(zipcode))
 
 listings <- left_join(listings, listings_details, by = "id", suffix=c("", ".y")) %>% select(-ends_with(".y"))
@@ -84,6 +86,27 @@ listings <- left_join(listings, attraction_distance, by = "zipcode", suffix=c(""
   st_transform(st_crs(nhoods))
 
 listings <- st_join(listings, nhoods, join = st_within, suffix=c("", ".y")) %>% select(-ends_with(".y"))
+
+# Converting census columns into numeric
+for (i in sequence(15,3,1)) {
+  census[[i]] <- as.numeric(census[[i]])
+}
+
+# Grouping and summarizing census data per zip code
+census <- census %>% group_by(PostalCode) %>% summarize(married = sum(Married, na.rm = TRUE), 
+                                                        migration = sum(Persons_with_a_migration_background, na.rm = TRUE),
+                                                        vio_sex_crimes = sum(Violentandsexualcrimes, na.rm = TRUE)) %>%
+                                              filter(!PostalCode %in% (".")) 
+
+# Formatting zip code correctly and changing column name
+census$PostalCode <- str_extract(census$PostalCode, "^.{4}")
+
+listings$zipcode <- str_extract(listings$zipcode, "^.{4}")  
+
+colnames(census)[1] <- "zipcode"
+
+# Joining listings with zip codes
+listings <- left_join(listings, census, by = "zipcode")
 ```
 
 ```{r read_data, results = FALSE, message = FALSE, warning = FALSE, error = FALSE}
@@ -94,7 +117,7 @@ amenities_count <- ifelse(amenities_count > 0, amenities_count + 1, amenities_co
 listings <- cbind(listings, amenities_count) 
 
 # Converting columns weekly price, monthly price, cleaning fee, and security deposit to numeric values
-for (i in sequence(4, 67, 1)) {
+for (i in sequence(6, 67, 1)) {
   listings[[i]] <- gsub("^.{0,1}", "", listings[[i]])
   listings[[i]] <- as.numeric(ifelse(nchar(listings[[i]]) == 0, "0", listings[[i]]) %>% str_replace(",", ""))
 }
@@ -105,13 +128,11 @@ listings <- listings %>% filter(weekly_price > 0 | monthly_price > 0)
 # Calculating a daily price from either weekly or monthly price
 listings$daily_price <- ifelse(listings$weekly_price > 0, listings$weekly_price / 7, listings$monthly_price / 30)
 
-# Cleaning the zipcode by taking the first four numbers and removing whatever is after
-listings$zipcode <- str_extract(listings$zipcode, "^.{4}")
-  
+# Filtering for outliers
 listings <- listings %>% filter(daily_price > 0 & daily_price < 1500)
 
 # Selecting a list of all relevant variables
-var <- c("zipcode", "daily_price", "room_type", "host_is_superhost", "host_identity_verified", "accommodates", "beds", "bed_type", "cancellation_policy", "number_of_reviews", "property_type", "bathrooms", "bedrooms", "amenities_count", "review_scores_rating", "has_availability", "guests_included", "security_deposit", "cleaning_fee", "extra_people","neighbourhood", "availability_30", "weekly_price", "monthly_price", "near_ATTRAC", "near_museum", "near_Performing_arts")
+var <- c("zipcode", "daily_price", "room_type", "host_is_superhost", "host_identity_verified", "accommodates", "beds", "bed_type", "cancellation_policy", "number_of_reviews", "property_type", "bathrooms", "bedrooms", "amenities_count", "review_scores_rating", "has_availability", "guests_included", "security_deposit", "cleaning_fee", "extra_people","neighbourhood", "availability_30", "weekly_price", "monthly_price", "near_ATTRAC", "near_museum", "near_Performing_arts", "married", "migration", "vio_sex_crimes")
 
 listings <- listings %>% select(all_of(var)) 
 
@@ -122,25 +143,11 @@ listings <- listings %>% drop_na(cleaning_fee, security_deposit)
 
 ## Exploratory Data Analysis
 ```{r read_data, results = FALSE, message = FALSE, warning = FALSE, error = FALSE}
-# Descriptive Statistics (Jarred) 
-
-# Descriptive Statistics (Jarred) 
-
-
-
-install.packages("summarytools")
-library(summarytools)
-
-#"k_nearest_price"????
-
-variables_to_summarize <- c("daily_price","near_ATTRAC", "property_type", "beds", "accommodates", "bed_type",                             "bathrooms", "bedrooms", "amenities_count", "review_scores_rating",
-                            "number_of_reviews", "cancellation_policy",
-                            "host_identity_verified", "bed_type", "host_is_superhost", 
-                            "cleaning_fee", "security_deposit", "extra_people",
-                            "zipcode","neighbourhood", "availability_30", "near_museum",
-                            "near_Performing_arts")
-
-
+variables_to_summarize <- c("daily_price","room_type","near_ATTRAC", "k_nearest_price",
+                            "number_of_reviews","property_type", "bathrooms", "bedrooms",
+                            "review_scores_rating", "cancellation_policy", "host_identity_verified",
+                            "accommodates", "beds", "bed_type", "host_is_superhost", "cleaning_fee",
+                            "security_deposit", "extra_people", "zipcode", "availability_30", "neighbourhood")
 
 
 summary_stats <- descr(listings[, variables_to_summarize], stats = "common")  
@@ -165,30 +172,9 @@ rounded_summary %>%
 
 ```{r read_data, results = FALSE, message = FALSE, warning = FALSE, error = FALSE}
 # Show a of the unlogged daily price (Jarred) 
-
 ggplot(listings, aes(x=daily_price)) + 
-    geom_histogram(fill="darkblue") +
+    geom_histogram(fill="blue") +
     ggtitle("Airbnb Daily Price Distribution") 
-```
-
-```{r daily_price_map, fig.height=8, fig.width=8}
-
-
-ggplot() +
-  geom_sf(data = nhoods, fill = "grey90") +
-  geom_sf(data = listings, aes(colour = daily_price), show.legend = "point", size = 0.75) +
-  scale_color_viridis_b(
-    limits = c(0, 600),  # Set the color scale limits (adjust as needed)
-    breaks = c(0, 50, 100, 150, 200, 250,300,350),  # Specify break points
-    labels = c("0", "50", "100", "150", "200", "250","300","350+"),  # Specify labels
-    name = "Daily Price"  # Set the legend title
-  ) +
-  labs(title = "Amsterdam Daily Airbnb Price Home") +
-  theme_void() +
-  theme(
-    legend.title = element_text(margin = margin(b = 10))  # Adjust the bottom margin of the legend title
-  )
-
 ```
 
 ```{r read_data, results = FALSE, message = FALSE, warning = FALSE, error = FALSE}
@@ -196,7 +182,7 @@ ggplot() +
 listings$daily_price <- log(listings$daily_price)
 
 ggplot(listings, aes(x=daily_price)) + 
-    geom_histogram(fill="darkblue") +
+    geom_histogram(fill="blue") +
     ggtitle("Log of Daily Price Distribution") 
 
 ```
@@ -220,7 +206,7 @@ ggcorrplot(
     labs(title = "Correlation across numeric variables") 
 ```
 
-```{r read_data, results = FALSE, message = FALSE, warning = FALSE, error = FALSE, fig.width=8, fig.height=8}
+```{r read_data, results = FALSE, message = FALSE, warning = FALSE, error = FALSE}
 # Log price by neighborhood (Jarred) 
 listings$neighbourhood <- factor(listings$neighbourhood)
 
@@ -317,13 +303,14 @@ avg_price_by_neighbourhood$neighbourhood <- as.character(avg_price_by_neighbourh
 
 merged_data_sf <- st_join(neighbourhood_boundaries, avg_price_by_neighbourhood)
 
- 
-pal2 <- c("#9DBF9E", "#A84268", "#FCB97D", "#C0BCB5", "#4A6C6F", "#FF5E5B")
+
+
+
 
 ggplot() +
   geom_sf(data = merged_data_sf, aes(fill = average_price), color = NA) +
   scale_fill_gradient(low = "white",high = "darkred") +
-  labs(title = "Average Daily Price by Neighborhood") +
+  labs(title = "average Daily Price by Neighborhood") +
   theme( 
     panel.grid.major = element_blank(),
     panel.grid.minor = element_blank(),
@@ -331,29 +318,9 @@ ggplot() +
     axis.text = element_blank(),
     )
 
-listings$daily_price <- as.numeric(as.character(listings$daily_price))
-
-# Create your ggplot2 plot with a continuous color scale
-ggplot() +
-  geom_sf(data = nhoods, fill = "grey90") +
-  geom_sf(data = listings, aes(colour = daily_price), show.legend = "point", size = 0.75) +
-  scale_color_viridis_b(
-    limits = c(2, 8),  # Set the color scale limits (adjust as needed)
-    breaks = c(3, 4, 5, 6, 7),  # Specify break points
-    labels = c("3", "4", "5", "6", "7"),  # Specify labels
-    name = "Daily Price"  # Set the legend title
-  ) +
-  labs(title = "Amsterdam Logged Daily Airbnb Price Home") +
-  theme_void() +
-  theme(
-    legend.title = element_text(margin = margin(b = 10))  # Adjust the bottom margin of the legend title
-  )
-
 
 ```
 
-
-hist(listings$daily_price)
 # Methods & Results
 
 
@@ -384,14 +351,17 @@ Non-Spatial (hedonic) Features:
 # Training Regression
 
 ```{r regression, results = 'hide', fig.align= 'center', warning = FALSE, message = FALSE, error = FALSE }
+set.seed(1000)
+listings[listings[zipcode].duplicated(keep=False)]
 
 inTrain <- createDataPartition(
-              y = paste(listings$daily_price),
+              y = paste(listings$daily_price,
+                        listings$zipcode),
               p = .6, list = FALSE)
 
-listings_train <- listings[inTrain,] 
+listings_train <- listings[inTrain,] %>% filter(!room_type %in% c("Shared room"), !property_type %in% c("Boutique hotel", "Bungalow", "Cabin", "Chalet", "Nature lodge", "Villa", "Serviced apartment"), !bed_type %in% c("Airbed"))
 
-listings_test <- listings[-inTrain,] 
+listings_test <- listings[-inTrain,] %>% filter(!room_type %in% c("Shared room"))
 
 nrow(listings_test)
 
@@ -405,30 +375,29 @@ spatialWeights.training <- nb2listw(neighborList.training, style="W")
 
 listings_train <- listings_train %>% mutate(k_nearest_price = lag.listw(spatialWeights.training, daily_price) / accommodates)
 
-
   reg_train <- 
     lm(daily_price ~ ., data = as.data.frame(listings_train) %>% 
                                dplyr::select(daily_price,
-                                           room_type,
-                                           near_ATTRAC,
-                                           k_nearest_price,
-                                           number_of_reviews,
-                                           property_type,
-                                           bathrooms,
-                                           bedrooms,
-                                           review_scores_rating,
-                                           cancellation_policy,
-                                           host_identity_verified,
-                                           accommodates,
-                                           beds,
-                                           bed_type,
-                                           host_is_superhost,
-                                           cleaning_fee,
-                                           security_deposit,
-                                           extra_people,
-                                           zipcode,
-                                           availability_30,
-                                           neighbourhood))
+                                             room_type,
+                                             near_ATTRAC,
+                                             k_nearest_price,
+                                             number_of_reviews,
+                                             property_type,
+                                             bathrooms,
+                                             review_scores_rating,
+                                             cancellation_policy,
+                                             host_identity_verified,
+                                             accommodates,
+                                             beds,
+                                             bed_type,
+                                             host_is_superhost,
+                                             cleaning_fee,
+                                             security_deposit,
+                                             extra_people,
+                                             zipcode,
+                                             availability_30,
+                                             neighbourhood
+                                             ))
   
 summary(reg_train)$r.squared
 ```
@@ -576,20 +545,28 @@ distance to tourist attractions
 Check instances for each variable
 
 
-
 Questions for Michael:
-1. Wants to see process of varibale choice (i.e. we run regression and then drop variables etc?)
-2. Is our idea valid?
+1. Is our idea valid? (added variables crime rate, percent immigrant, medhhincome, avg distance to tourist attraction)
+
+
+Can't rent multiple properties (companies need special permit)
+30 nights limit
+
+Insights: macro features like crime rate migration are not effecting model much since europe is more equal -> need more data on internal house characteristics
 
 
 
+Graph distance to airbnb price 
+How can we link airbnb names to people? Have data base! 
+
+AirBnb has data for amsterdam
 ```{r read_data, results = FALSE, message = FALSE, warning = FALSE, error = FALSE}
 #JArred
 listings <- read.csv("C:\\Users\\fatbo\\OneDrive\\Desktop\\Airbnb\\Airbnb\\listings.csv")
 
 listings_details <- read.csv("C:\\Users\\fatbo\\OneDrive\\Desktop\\Airbnb\\Airbnb\\listings_details.csv")
 
-nhoods <- st_read("C:/Users/fatbo/OneDrive/Desktop/Airbnb/Airbnb/neighbourhoods.geojson")
+nhoods <- st_read("C:\\Users\\fatbo\\OneDrive\\Desktop\\Airbnb\\Airbnb\\neighbourhoods.geojson")
 
 joined <- left_join(listings, listings_details, by = "id", suffix=c("", ".y")) %>% select(-ends_with(".y"))
 
