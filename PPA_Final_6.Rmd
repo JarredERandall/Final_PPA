@@ -142,33 +142,6 @@ listings <- listings %>% drop_na(cleaning_fee, security_deposit)
 ## Exploratory Data Analysis
 ### Dependent Variable
 ```{r read_data, results = FALSE, message = FALSE, warning = FALSE, error = FALSE}
-variables_to_summarize <- c("daily_price","room_type","near_ATTRAC", "k_nearest_price",
-                            "number_of_reviews","property_type", "bathrooms", "bedrooms",
-                            "review_scores_rating", "cancellation_policy", "host_identity_verified",
-                            "accommodates", "beds", "bed_type", "host_is_superhost", "cleaning_fee",
-                            "security_deposit", "extra_people", "zipcode", "availability_30", "neighbourhood")
-
-
-summary_stats <- descr(listings[, variables_to_summarize], stats = "common")  
-summary_table <- t(summary_stats)
-
-
-rounded_summary <- t(apply(summary_table, 1, function(x) {
-  if (all(is.numeric(x))) {
-    return(round(x, 2))
-  } else {
-    return(x)
-  }
-}))
-
-# Create the table using kableExtra
-rounded_summary %>%
-  kbl(caption = "Summary Statistics") %>%
-  kable_classic(full_width = F, html_font = "Cambria")
-```
-
-
-```{r read_data, results = FALSE, message = FALSE, warning = FALSE, error = FALSE}
 # Show a of the unlogged daily price (Jarred) 
 gghistogram(
   data = listings, x = "daily_price", 
@@ -506,8 +479,6 @@ In conclusion, the feature engineering section gives cues that good accessibilit
 
 
 
-
-
 # Methods & Results
 
 ## Training Regression
@@ -565,6 +536,40 @@ listings_train <- listings_train %>% mutate(k_nearest_price = lag.listw(spatialW
 summary(reg_train)$r.squared
 ```
 
+# Training Regression Results
+```{r result_traiining_set, fig.align= 'center', warning = FALSE, message = FALSE, error = FALSE}
+# Adding Baseline Regression predictions to data set and adding KPI's
+listings_train <- listings_train %>% na.omit()
+
+listings_train <-
+  listings_train %>%
+  mutate(Regression = "Baseline Regression",
+         daily_price.predict = exp(predict(reg_train, listings_train)),
+         daily_price.error = daily_price.predict - exp(daily_price),
+         daily_price.abserror = abs(daily_price.predict - exp(daily_price)),
+         daily_price.ape = (abs(daily_price.predict - exp(daily_price))) / daily_price.predict)%>%
+  filter(!is.na(daily_price.abserror))
+
+# Saving results in table 
+results_train <- data.frame(MAE = mean(listings_train$daily_price.abserror, na.rm = T), MAPE =  mean(listings_train$daily_price.ape, na.rm = T))
+
+results_train %>%
+  kbl(caption = "Training Results") %>%
+  kable_classic(full_width = F, html_font = "Cambria")
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
 ```{r regression, results = 'hide', fig.align= 'center', warning = FALSE, message = FALSE, error = FALSE }
 set.seed(1000)
 
@@ -582,31 +587,9 @@ for (i in sequence(length(loop),1,1)) {
 results [[i]] <- summary(reg_train)$r.squared
 }
 
-results <- as.data.frame(cbind(loop, results)) %>% mutate(lagged_results = lag(results), change = as.numeric(results) - as.numeric(lagged_results))
+results <- as.data.frame(cbind(loop, results)) %>% mutate(lagged_results = lag(results), change = as.numeric(results) - as.numeric(lagged_results)) 
 ```
-
-# Training Regression Results
-```{r result_traiining_set, fig.align= 'center', warning = FALSE, message = FALSE, error = FALSE}
-# Adding Baseline Regression predictions to data set and adding KPI's
-listings_train <- listings_train %>% na.omit()
-
-listings_train <-
-  listings_train %>%
-  mutate(Regression = "Baseline Regression",
-         daily_price.predict = predict(reg_train, listings_train),
-         daily_price.error = daily_price.predict - daily_price,
-         daily_price.abserror = abs(daily_price.predict - daily_price),
-         daily_price.ape = (abs(daily_price.predict - daily_price)) / daily_price.predict)%>%
-  filter(!is.na(daily_price.abserror))
-
-
-# Saving results in table 
-results_train <- data.frame(MAE = mean(listings_train$daily_price.abserror, na.rm = T), MAPE =  mean(listings_train$daily_price.ape, na.rm = T))
-
-results_train %>%
-  kbl(caption = "Training Results") %>%
-  kable_classic(full_width = F, html_font = "Cambria")
-```
+*add graphic for loop*
 
 # Test Regression
 ```{r read_data, results = FALSE, message = FALSE, warning = FALSE, error = FALSE}
@@ -725,3 +708,28 @@ ggplot(reg.cv$resample) +
 
 
 
+```{r read_data, results = FALSE, message = FALSE, warning = FALSE, error = FALSE}
+variables_to_summarize <- c("daily_price","room_type","near_ATTRAC", "k_nearest_price",
+                            "number_of_reviews","property_type", "bathrooms", "bedrooms",
+                            "review_scores_rating", "cancellation_policy", "host_identity_verified",
+                            "accommodates", "beds", "bed_type", "host_is_superhost", "cleaning_fee",
+                            "security_deposit", "extra_people", "zipcode", "availability_30", "neighbourhood")
+
+
+summary_stats <- descr(listings[, variables_to_summarize], stats = "common")  
+summary_table <- t(summary_stats)
+
+
+rounded_summary <- t(apply(summary_table, 1, function(x) {
+  if (all(is.numeric(x))) {
+    return(round(x, 2))
+  } else {
+    return(x)
+  }
+}))
+
+# Create the table using kableExtra
+rounded_summary %>%
+  kbl(caption = "Summary Statistics") %>%
+  kable_classic(full_width = F, html_font = "Cambria")
+```
