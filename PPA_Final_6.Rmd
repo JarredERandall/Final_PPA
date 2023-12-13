@@ -8,7 +8,7 @@ date: "2023-12-15"
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-```{r setup, include=FALSE, class.source = 'fold-show'}
+```{r setup packages, include=FALSE, class.source = 'fold-show'}
 knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
 library(tidycensus)
@@ -68,7 +68,7 @@ census <- read.csv("/Users/nohman/Documents/GitHub/Final_PPA/Data/final_census.c
 ```
 
 ## Data Wrangling
-``` {r joined_nhood sf}
+``` {r manipulating and joining data sf}
 # Joining data sets, converting to crs
 attraction_distance <- attraction_distance %>% transform(zipcode = as.character(zipcode))
 
@@ -107,7 +107,7 @@ colnames(census)[1] <- "zipcode"
 listings <- left_join(listings, census, by = "zipcode")
 ```
 
-```{r read_data, results = FALSE, message = FALSE, warning = FALSE, error = FALSE}
+```{r manipulating and joining data 2, results = FALSE, message = FALSE, warning = FALSE, error = FALSE}
 # Adding the number of amenities per listing
 amenities_count <- as.integer(str_count(listings$amenities, ","))
 amenities_count <- ifelse(amenities_count > 0, amenities_count + 1, amenities_count)
@@ -141,7 +141,7 @@ listings <- listings %>% drop_na(cleaning_fee, security_deposit)
 
 ## Exploratory Data Analysis
 ### Dependent Variable
-```{r read_data, results = FALSE, message = FALSE, warning = FALSE, error = FALSE}
+```{r daily price visualization, results = FALSE, message = FALSE, warning = FALSE, error = FALSE}
 # Show a of the unlogged daily price (Jarred) 
 gghistogram(
   data = listings, x = "daily_price", 
@@ -157,7 +157,7 @@ When visualizing the daily price, we see a heavy right-skew. Since our model wil
 
 We hence continue to log transform our dependent variable.
 
-```{r read_data, results = FALSE, message = FALSE, warning = FALSE, error = FALSE}
+```{r daily price visualization logged, results = FALSE, message = FALSE, warning = FALSE, error = FALSE}
 # Log price by Property Type (Jarred) 
 listings$daily_price <- log(listings$daily_price)
 
@@ -178,7 +178,7 @@ We want to build a hedonic housing price model that includes 1) internal feature
 To pick meaningful predictors, we set up a correlation matrix and observe values that have a high correlation with our dependent variable. Note that it doesn't matter if the correlation is negative or positive- high values in both contain potentially valuable information for the model.
 
 In the next subsections, we will go through each of these points, explain which features we engineered, and whether the correlation matrix gives us a reason to include these features in our model.
-```{r map_1}
+```{r visual_1}
 # Calculating averages per neighborhood
 avg_nhood <- listings %>%
   group_by(neighbourhood) %>%
@@ -213,7 +213,7 @@ maps[[1]] +  labs(title = "Average Price", caption = "Fig.1") +
              labs(title = "Avg. Daily AirBnB Price in Amsterdam", caption = "Fig.1")
 ```
 
-```{r read_data, results = FALSE, message = FALSE, warning = FALSE, error = FALSE}
+```{r visual_2, results = FALSE, message = FALSE, warning = FALSE, error = FALSE}
 corr_vars <- 
   select_if(st_drop_geometry(listings), is.numeric) %>% na.omit()
 
@@ -254,7 +254,7 @@ Surprisingly, the engineered feature amenities count which counts the number of 
 #### Non-Numeric Hedonic Predictors
 As for non-numeric hedonic predictors, we look at the property type. This is an obvious predictor to pick since shared rooms, for instance, are likely to be much less expensive that whole houses.
 
-```{r read_data, results = FALSE, message = FALSE, warning = FALSE, error = FALSE}
+```{r visual_3, results = FALSE, message = FALSE, warning = FALSE, error = FALSE}
 colors <- rainbow(length(unique(listings$neighbourhood)))
 
 faded_colors2 <- adjustcolor(colors, alpha.f = 0.6) 
@@ -276,7 +276,7 @@ ggplot(data = listings, aes(x = room_type, y = exp(daily_price), fill = room_typ
 #### Spatial process
 A regression run purely on hedonic factors results in an $R^2$ of 0.4. This value is relatively low, and one could argue that including the spatial process could increase it significantly. 
 
-```{r read_data, results = FALSE, message = FALSE, warning = FALSE, error = FALSE}
+```{r visual_4, results = FALSE, message = FALSE, warning = FALSE, error = FALSE}
 # Log price by neighborhood (Jarred) 
 listings$neighbourhood <- factor(listings$neighbourhood)
 
@@ -303,6 +303,8 @@ Adding the neighourhoud effects and even the k-nearest neighbors only increases 
 
 However, our data set is not as dense, meaning that our k-nearest observations are quite far away, and that as a consequence, we could even switch between neighbourhouds. Additionally, we are missing the square feet size of each apartment, a core predictor for each pricing prediction. 
 
+One finding in support of this argument is that in a later section, our regression accuracy will only increase by 0.02 when changing our k from 5 to 10 in the k nearest neighbor function. This implies that surrounding listings do nearly nothing to explain the value of the listing itself.
+
 *Add average distance to k nearest neighbors (use spatstats package) nndist(listings, 5) spatstats OR say that changing k nearest from 5 to 20 doesn't make a big difference in the model -> low spatial process -> more hedonic variables for prediction*
 
 Given the above observations, we therefore tried to come up with demographic and infrastructural feature engineering to improve the model.
@@ -318,7 +320,7 @@ As explained above, one reason for this could be that all some of these factors 
 
 Support for this comes from the map comparing neighbourhoods where crimes occur versus neighbourhoods with high proprtion of married households.
 
-```{r read_data, results = FALSE, message = FALSE, warning = FALSE, error = FALSE}
+```{r visual_5, results = FALSE, message = FALSE, warning = FALSE, error = FALSE}
 # 9 crimes, 10 migrants, 11 married
 maps[[9]] +  labs(title = "Average Price", caption = "Fig.1") + 
              scale_fill_gradient(low = "white",high = airbnb_color, name = "Price Gradient in USD") +
@@ -326,7 +328,7 @@ maps[[9]] +  labs(title = "Average Price", caption = "Fig.1") +
 ```
 We first observe that there is a hotspot for crimes in the same area in which there are many cafes, as we had previously predicted.
 
-```{r read_data, results = FALSE, message = FALSE, warning = FALSE, error = FALSE}
+```{r visual_6, results = FALSE, message = FALSE, warning = FALSE, error = FALSE}
 # 9 crimes, 10 migrants, 11 married
 maps[[3]] +  labs(title = "Average Price", caption = "Fig.1") + 
              scale_fill_gradient(low = "white",high = airbnb_color, name = "Price Gradient in USD") +
@@ -334,14 +336,14 @@ maps[[3]] +  labs(title = "Average Price", caption = "Fig.1") +
 ```
 We then see that the areas with high migrant population are not those where most crimes occur, and that areas with high migrant population also have high marriage rates.
 
-```{r read_data, results = FALSE, message = FALSE, warning = FALSE, error = FALSE}
+```{r visual_7, results = FALSE, message = FALSE, warning = FALSE, error = FALSE}
 # 9 crimes, 10 migrants, 11 married
 maps[[10]] +  labs(title = "Average Price", caption = "Fig.1") + 
              scale_fill_gradient(low = "white",high = airbnb_color, name = "Price Gradient in USD") +
              labs(title = "Avg. Daily AirBnB Price in Amsterdam", caption = "Fig.1")
 ```
 
-```{r read_data, results = FALSE, message = FALSE, warning = FALSE, error = FALSE}
+```{r visual_8, results = FALSE, message = FALSE, warning = FALSE, error = FALSE}
 # 9 crimes, 10 migrants, 11 married
 maps[[11]] +  labs(title = "Average Price", caption = "Fig.1") + 
              scale_fill_gradient(low = "white",high = airbnb_color, name = "Price Gradient in USD") +
@@ -354,7 +356,7 @@ European cities are generally more center focused. This is to say that there is 
 
 With all these properties, the assumption that tourists will be willing to pay a premium to live close to central makes sense. And even though a great public transportation network may attenuate that willingness, there still should be a visible trend.
 
-```{r read_data, results = FALSE, message = FALSE, warning = FALSE, error = FALSE}
+```{r visual_9, results = FALSE, message = FALSE, warning = FALSE, error = FALSE}
 # Distance to city center (why are there NA's?)
 MRB <- multipleRingBuffer(st_union(listings %>% filter(neighbourhood == "Centrum-West")), 11000, 200)
 
@@ -396,7 +398,7 @@ We therefore engineered a variety of transportation data, including distance of 
 
 The distance to tourist attractions, museum, and performing arts centers didn't show any significant correlation, implying that customers likely are not willing to pay up a premium to be close to these facilities. One reason could be that the transportation network in the city is so great that there might be no real need to be that close to these facilities, and that there are many transportation connections all around the city.
 
-```{r read_data, results = FALSE, message = FALSE, warning = FALSE, error = FALSE}
+```{r visual_10, results = FALSE, message = FALSE, warning = FALSE, error = FALSE}
 maps[[2]] +  labs(title = "Average Price", caption = "Fig.1") + 
              scale_fill_gradient(low = "white",high = airbnb_color, name = "Price Gradient in USD") +
              labs(title = "Avg. Daily AirBnB Price in Amsterdam", caption = "Fig.1")
@@ -406,30 +408,30 @@ Indeed, Amsterdam has the second best urban public transport system in Europe ac
 
 This is corroborated by the average distance of a neighbourhood to what is considered a main road.
 
-```{r read_data, results = FALSE, message = FALSE, warning = FALSE, error = FALSE}
-maps[[2]] +  labs(title = "Average Price", caption = "Fig.1") + 
-             scale_fill_gradient(low = "white",high = airbnb_color, name = "Price Gradient in USD") +
-             labs(title = "Avg. Daily AirBnB Price in Amsterdam", caption = "Fig.1")
+```{r visual_11, results = FALSE, message = FALSE, warning = FALSE, error = FALSE}
+maps[[2]] +  labs(caption = "Fig.1") + 
+             scale_fill_gradient(low = "white",high = airbnb_color, name = "Distance in km") +
+             labs(title = "Avg. Distance to Main Road", caption = "Fig.1")
 ```
 
 What about restaurants, cafes, and hotels?
 
-```{r read_data, results = FALSE, message = FALSE, warning = FALSE, error = FALSE}
+```{r visual_12, results = FALSE, message = FALSE, warning = FALSE, error = FALSE}
 # 3 cafes 4 restaurants 5 hotels
-maps[[3]] +  labs(title = "Average Price", caption = "Fig.1") + 
-             scale_fill_gradient(low = "white",high = airbnb_color, name = "Price Gradient in USD") +
-             labs(title = "Avg. Daily AirBnB Price in Amsterdam", caption = "Fig.1")
+maps[[3]] +  labs(caption = "Fig.1") + 
+             scale_fill_gradient(low = "white",high = airbnb_color, name = "Number of Cafes") +
+             labs(title = "Number of Cafes per Neighborhood", caption = "Fig.1")
 ```
 
-```{r read_data, results = FALSE, message = FALSE, warning = FALSE, error = FALSE}
+```{r visual_20, results = FALSE, message = FALSE, warning = FALSE, error = FALSE}
 # 3 cafes 4 restaurants 5 hotels
-maps[[4]] +  labs(title = "Average Price", caption = "Fig.1") + 
+maps[[4]] +  labs(caption = "Fig.1") + 
              scale_fill_gradient(low = "white",high = airbnb_color, name = "Price Gradient in USD") +
              labs(title = "Avg. Daily AirBnB Price in Amsterdam", caption = "Fig.1")
 ```
 Restaurants and cafes are, as expected, concentrated around the central district. However, there are also districts in the mid-west and mid-east of the city that have high housing prices but also many restaurants and cafes.
 
-```{r read_data, results = FALSE, message = FALSE, warning = FALSE, error = FALSE}
+```{r visual_13, results = FALSE, message = FALSE, warning = FALSE, error = FALSE}
 # 1 price
 maps[[1]] +  labs(title = "Average Price", caption = "Fig.1") + 
              scale_fill_gradient(low = "white",high = airbnb_color, name = "Price Gradient in USD") +
@@ -441,7 +443,7 @@ In conclusion, engineering non-hedonic features has been quite demanding as so m
 
 ### Preparation for Regression Model
 
-```{r read_data, results = FALSE, message = FALSE, warning = FALSE, error = FALSE}
+```{r uniqueness check, results = FALSE, message = FALSE, warning = FALSE, error = FALSE}
 # Checking if we have too many categories in a variable
 
 roomtype <- unique(listings$room_type)
@@ -484,7 +486,7 @@ In conclusion, the feature engineering section gives cues that good accessibilit
 # Methods & Results
 
 ## Training Regression
-```{r regression, results = 'hide', fig.align= 'center', warning = FALSE, message = FALSE, error = FALSE }
+```{r regression training, results = 'hide', fig.align= 'center', warning = FALSE, message = FALSE, error = FALSE }
 # Partitioning data set into training and test
 set.seed(1000)
 
@@ -502,7 +504,7 @@ listings_test <- listings[-inTrain,] %>% filter(!room_type %in% c("Shared room")
 # Adding nearest neighbours
 coords.test.training <-  st_coordinates(listings_train) 
 
-neighborList.training <- knn2nb(knearneigh(coords.test.training, 1))
+neighborList.training <- knn2nb(knearneigh(coords.test.training, 5))
 
 spatialWeights.training <- nb2listw(neighborList.training, style="W")
 
@@ -539,7 +541,7 @@ listings_train <- listings_train %>% mutate(k_nearest_price = lag.listw(spatialW
 summary(reg_train)$r.squared
 ```
 
-```{r result_traiining_set, fig.align= 'center', warning = FALSE, message = FALSE, error = FALSE}
+```{r regression training results, fig.align= 'center', warning = FALSE, message = FALSE, error = FALSE}
 # Adding Baseline Regression predictions to data set and adding KPI's
 listings_train <- listings_train %>% na.omit()
 
@@ -564,7 +566,7 @@ We are now ready for our first regression analysis and split the data into a tes
 
 We'll go into a detailed analysis and interpretation for R, MAE,and MAPE for our test set. Before we check the performance of our regression model on unseen data (test set), we first want to understand what variables contribute most to our accuracy.
 
-```{r regression, results = 'hide', fig.align= 'center', warning = FALSE, message = FALSE, error = FALSE }
+```{r regression loop, results = 'hide', fig.align= 'center', warning = FALSE, message = FALSE, error = FALSE }
 set.seed(1000)
 
 loop <- c("daily_price", "room_type", "near_ATTRAC", "k_nearest_price", "number_of_reviews", "property_type", "bathrooms", "bedrooms", "review_scores_rating", "cancellation_policy", "host_identity_verified", "accommodates", "beds", "bed_type", "host_is_superhost", "cleaning_fee", "security_deposit", "extra_people", "availability_30", "zipcode", "neighbourhood", "distance")
@@ -587,7 +589,7 @@ results <- as.data.frame(cbind(loop, results)) %>% mutate(lagged_results = lag(r
 
 
 # Test Regression
-```{r read_data, results = FALSE, message = FALSE, warning = FALSE, error = FALSE}
+```{r test regression, results = FALSE, message = FALSE, warning = FALSE, error = FALSE}
 # Adding nearest neighbours
 coords.test.2 <-  st_coordinates(listings_test) 
 
@@ -620,7 +622,7 @@ Our test set has a MAE of 21$ and a MAPE of 19.5%. Given that we are missing the
 To understand where our model has weaknesses, we map the spatial distribution of erros.
 
 
-```{r read_data, results = FALSE, message = FALSE, warning = FALSE, error = FALSE}
+```{r visual_17, results = FALSE, message = FALSE, warning = FALSE, error = FALSE}
 # Visualizing spatial error
 ggplot() +
   geom_sf(data = listings_test, fill ="grey40" ,colour = "white") +
@@ -634,8 +636,15 @@ ggplot() +
 ```
 
 ```{r moran_mc, fig.align= 'center', warning = FALSE, message = FALSE, error = FALSE}
+coords.test.3 <-  st_coordinates(listings_test) 
+
+neighborList.test.3 <- knn2nb(knearneigh(coords.test.3, 3))
+
+spatialWeights.test.3 <- nb2listw(neighborList.test.3, style="W")
+
+
 moranTest <- moran.mc(listings_test$daily_price.error, 
-                      spatialWeights.test.2, nsim = 999)
+                      spatialWeights.test.3, nsim = 999)
 
 morans_plot <-ggplot(as.data.frame(moranTest$res[c(1:999)]), aes(moranTest$res[c(1:999)])) +
   geom_histogram(binwidth = 0.01) +
@@ -711,7 +720,7 @@ As the city of Amsterdam has data on sizes for all listings, we could integrate 
 
 
 
-```{r read_data, results = FALSE, message = FALSE, warning = FALSE, error = FALSE}
+```{r random, results = FALSE, message = FALSE, warning = FALSE, error = FALSE}
 variables_to_summarize <- c("daily_price","room_type","near_ATTRAC", "k_nearest_price",
                             "number_of_reviews","property_type", "bathrooms", "bedrooms",
                             "review_scores_rating", "cancellation_policy", "host_identity_verified",
