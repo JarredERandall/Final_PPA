@@ -1,0 +1,48 @@
+@misc{statista2023netherlands,
+  title = {From restrictions to reimagination: Amsterdam’s vision for a new tourist economy},
+  author = {{Statista}},
+  year = {2023},
+  url = {https://oecdcogito.blog/2023/05/10/from-restrictions-to-reimagination-amsterdams-vision-for-a-new-tourist-economy/}
+}
+
+@misc{msuilr2018airbnb,
+  title = {Regulating a Largely Unregulated Market: What Amsterdam Has Done to Control Airbnb Rentals},
+  author = {{Michigan State University International Law Review}},
+  year = {2018},
+  url = {https://www.msuilr.org/msuilr-legalforum-blogs/2018/11/19/regulating-a-largely-unregulated-market-what-amsterdam-has-done-to-control-airbnb-rentals}
+}
+
+@misc{dutchnews2022airbnb,
+  title = {Airbnb-style rentals harmful to Amsterdam, says tourism chief},
+  author = {{DutchNews.nl}},
+  year = {2022},
+  url = {https://www.dutchnews.nl/2022/10/airbnb-style-rentals-harmful-to-amsterdam-says-tourism-chief/}
+}
+
+@misc{dictionary,
+  title = {Definition of overtourism},
+  author = {Dictionary.com},
+  url = {https://www.dictionary.com/browse/overtourism}
+}
+
+@article{radnovic2019airbnb,
+  title = {Marketing Influence of Touristic Airbnb Application on Vacation Rental Market in London, Paris, Berlin, Rome and Amsterdam},
+  author = {Branislav Radnović and others},
+  journal = {Tourism and Management Studies},
+  year = {2019},
+  doi = {10.31410/tmt.2019.571}
+}
+
+@misc{airbnb2023dutchregulations,
+  title = {Dutch regulations for Airbnb hosts},
+  author = {Airbnb},
+  year = {2023},
+  url = {https://www.airbnb.com/help/article/860}
+}
+
+@misc{amsterdam2023rentalpermit,
+  title = {Applying for a holiday rental permit in Amsterdam},
+  author = {City of Amsterdam},
+  year = {2023},
+  url = {https://www.amsterdam.nl/en/housing/holiday-rentals/applying-permit/}
+}

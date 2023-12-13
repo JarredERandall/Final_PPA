@@ -1,0 +1,756 @@
+---
+title: "FairBnB"
+output: 
+  html_document:
+    citation_package: biblatex
+bibliography: "C:/Users/fatbo/OneDrive/Documents/GitHub/Final_PPA/Bibli.bib/airbnb.bib"
+biblio-style: "chicago-notes"
+date: "2023-12-01"
+editor_options: 
+  markdown: 
+    wrap: 72
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r load, include=FALSE, class.source = 'fold-show'}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(tidycensus)
+library(sf)
+library(stargazer)
+library(spdep)
+library(caret)
+library(ckanr)
+library(FNN)
+library(kableExtra)
+library(grid)
+library(viridisLite)
+library(viridis)
+library(gridExtra)
+library(jtools)
+library(ggcorrplot) 
+library(corrr)      
+library(kableExtra)
+library(jtools)     
+library(ggstance) 
+library(ggpubr)   
+library(broom.mixed) 
+options(scipen = 999)
+
+install.packages("png")
+library(png)
+
+root.dir = "https://raw.githubusercontent.com/urbanSpatial/Public-Policy-Analytics-Landing/master/DATA/"
+
+source("https://raw.githubusercontent.com/urbanSpatial/Public-Policy-Analytics-Landing/master/functions.r")
+
+census_api_key("a6d692af505769f28e39a3ac16b7dcbacb1dad58", overwrite = TRUE)
+
+palette5 <- c("#25CB10", "#5AB60C", "#8FA108",   "#C48C04", "#FA7800")
+
+palette6 <- c("#25CB10", "#5AB60C", "grey40",   "grey40", "#FA7800")
+
+airbnb_color <- c("#FF5A5F")
+
+theme_update(plot.title = element_text(hjust = 0.5))
+```
+
+# Intro
+
+Overtourism is a polarizing issue plaguing the city of Amsterdam,
+sparking widespread debate and concern among both residents and
+policymakers.[^1] Overtourism is defined as a situation in which too
+many t[^2]ourists travel to a popular destination, causing the place to
+suffer negative environmental, economic, and sociocultural impacts.[\^4]
+In 2019, the number of tourists to Amsterdam inhabitants was a
+staggering 2,341% (figure 1), indicating that for every local there were
+roughly 23 tourists.[\^1] This disproportionate influx has led to
+tourism-based gentrification in Amsterdam, a phenomenon where residents
+are displaced as services and housing are increasingly tailored to meet
+tourist demands rather than those of the local population. The resulting
+consequences have been significant, manifesting in a dwindling housing
+stock, spiraling rental prices (Figure 2), and an increase in noise
+ordinances and public disturbances.[\^2]
+
+[^1]: DutchNews.nl. 2022. "Airbnb-Style Rentals Harmful to
+    Amsterdam,Says Tourism Chief."
+    <https://www.dutchnews.nl/2022/10/airbnb-style-rentals-harmful-to-amsterdam-says-tourism-chief/>.
+
+[^2]: DutchNews.nl. 2022. "Airbnb-Style Rentals Harmful to
+    Amsterdam,Says Tourism Chief."
+    <https://www.dutchnews.nl/2022/10/airbnb-style-rentals-harmful-to-amsterdam-says-tourism-chief/>.
+
+![Figure 1. Amsterdam's number of inhabitants vs inbound
+overnight](Presentation%20graphics/markdown_graphics/pop.png){width="8.6in"}
+
+![Figure 2. Average rent price of residential property in major
+Netherlands
+cities](Presentation%20graphics/markdown_graphics/AVG_RENT.png)
+
+The dramatic surge in tourist numbers has unsurprisingly correlated with
+a rise in short-term rental accommodations, including Airbnb listings,
+which have grown exponentially over the years. This growth is
+underscored by the rise in Airbnb guests throughout the Netherlands,
+from 75,000 in 2012 to 1.6 million in 2017.[\^2] Specifically, within
+Amsterdam itself, Airbnb property listings have skyrocketed from 2,400
+listings in 2012 to an overwhelming 19,619 by 2019 [\^4], reflecting the
+platform's substantial impact on the city's housing market.
+
+*listing graph*(Figure3)
+
+*listing map?*
+
+To mitigate the mounting pressures from the influx of Airbnb listings
+and the consequent housing issues, Amsterdam took proactive steps by
+becoming the world's first city to establish regulations on Airbnb
+rentals, forming a partnership with the platform itself. This pioneering
+move aimed to regulate the short-term rental market that had, until
+recently operated with little oversight, aims to address the community's
+concerns over noise disturbances, the shrinking supply of residential
+housing, and the preservation of neighborhood character.[\^2] These
+regulations include.
+
+-   **Listings cannot be rented out for more than 30 days a year**: If
+    listings reach or go over their yearly allotment of rental days the
+    city of Amsterdam can request that Airbnb block out the listings
+    calendar for the remainder of the year.[\^6]
+
+-   **Hosts cannot rent out multiple properties**: Hosts are not allowed
+    to rent out additional properties such as summer houses, tents, or
+    houseboats.[\^6][\^7]
+
+-   **All listings must have a permit and registration number**: In
+    order homes to be listed on Airbnb hosts need to obtain a vacation
+    rental permit from the city of Amsterdam. These permits are
+    temporary and must be renewed annually.[\^6][\^7]
+
+-   **Rental must be the hosts main residence**: The host must be
+    registered as living at the listing address in the Personal Records
+    Database (BRP) of the municipality of Amsterdam.[\^6][\^7]
+
+-   \*\* Notification of booking\*\*: According to Amsterdam Housing
+    Regulations hosts are required to notify the city every time they
+    rent out their home prior to the first day of check in.[\^6][\^7]
+
+-   **Housing corporation and social housing rentals cannot be listed**:
+    Rental properties from housing corporations, social housing, or rent
+    controlled apartments may not be listed as Airbnb rentals.[\^6][\^7]
+
+\*FairBNB logo\*\*
+
+While Amsterdam has taken a step forward by establishing these
+regulations, the city's next challenge lies in developing and
+implementing effective monitoring and enforcement mechanisms to ensure
+that these regulations address the challenges posed by short-term
+rentals and their contribution to overtourism. Given the complexities
+associated with the regulation of Airbnb and similar platforms, it
+becomes imperative for Amsterdam to explore innovative solutions that
+can effectively bridge the gap between policy and enforcement. Fairbnb
+emerges as groundbreaking app crafted to align with Amsterdam's
+regulatory framework. This application is not merely a response to the
+existing challenges, but a forward-thinking approach designed to
+complement and enhance the city's efforts in regulating short-term
+rentals. Fairbnb's features enable precise tracking of rental days,
+ensures hosts adhere to the one-rental property rule, and introduces a
+new fair-market pricing feature accompanied by an additional policy
+recommendation.
+
+**tracking Rental days**
+
+Fairbnb is designed to meticulously monitor listings to ensure they do
+not exceed the 30-day annual rental allotment. This is achieved through
+a comprehensive tracking system that utilizes data provided by the city
+of Amsterdam, directly from Airbnb, and additional information obtained
+through web scraping. The app features a state-of-the-art alert system
+that informs the city of Amsterdam about listings that are approaching,
+have reached, or have exceeded the 30-day limit. Once a listing reaches
+this threshold, Fairbnb will promptly notify Airbnb, enabling them to
+block the listing's calendar for the remainder of the year.
+
+*Insert graphics*
+
+**tracking Multiple Rental Properties** Fairbnb is also designed to
+identify hosts who list multiple properties by utilizing an advanced
+detection system that analyzes data provided by the city of Amsterdam,
+Airbnb, and additional data collected with web-scraping techniques. By
+cross-referencing this information, the app can accurately pinpoint
+hosts who might be in violation of the one-property rule. Upon
+identifying such cases, Fairbnb sends notifications to the city
+authorities, providing them with detailed insights about potential
+violations. In addition, the app communicates with Airbnb to initiate
+appropriate actions against these listings.
+
+*Insert graphics*
+
+\*\* new fair-market pricing\*\* Beyond assisting in the monitoring and
+enforcement of existing regulations, Fairbnb proposes an innovative
+addition: a fair pricing regulation, supported by a corresponding
+feature within the app. This initiative focuses on monitoring and
+curbing price gouging in Airbnb rentals, serving as a deterrent for
+hosts contemplating short-term rentals, thereby aiding in alleviating
+the issues of shrinking housing stock and overtourism. The proposed
+system will leverage historical Airbnb listing and pricing data,
+complemented by data obtained through web scraping, to establish a
+fair-market daily rental price. The mechanics of this advanced
+fair-market pricing system will be elaborated further in the
+methodologies section of the proposal. *Insert graphics*
+
+# Data
+
+## Data Import
+
+## Data Wrangling
+
+```{r joined_nhood sf}
+# Joining data sets, converting to crs
+attraction_distance <- attraction_distance %>% transform(zipcode = as.character(zipcode))
+
+listings <- left_join(listings, listings_details, by = "id", suffix=c("", ".y")) %>% select(-ends_with(".y"))
+
+listings <- left_join(listings, attraction_distance, by = "zipcode", suffix=c("", ".y")) %>% select(-ends_with(".y")) %>% st_as_sf(coords = c('longitude', 'latitude'), crs = 4326)  %>%
+  st_transform(st_crs(nhoods))
+
+listings <- st_join(listings, nhoods, join = st_within, suffix=c("", ".y")) %>% select(-ends_with(".y"))
+
+# Converting census columns into numeric
+for (i in sequence(33,3,1)) {
+  census[[i]] <- as.numeric(census[[i]])
+}
+
+# Grouping and summarizing census data per zip code
+census <- census %>% group_by(PostalCode) %>% summarize(married = sum(Married, na.rm = TRUE), 
+                                                        migration = sum(Persons_with_a_migration_background, na.rm =     TRUE),
+                                                        vio_sex_crimes = sum(Violentandsexualcrimes, na.rm = TRUE),
+                                                        cafes = mean(cafe_Within_1_km, na.rm = TRUE),
+                                                        restaurants = mean(restaurants_Within_1_km, na.rm = TRUE),
+                                                        hotels = mean(hotels_Within_5_km, na.rm = TRUE),
+                                                        road = mean(Distance_to_main_road_entrance, na.rm = TRUE),
+                                                        train = mean(Distance_to_train_station, na.rm = TRUE)) %>%
+                                             filter(!PostalCode %in% (".")) 
+
+
+# Formatting zip code correctly and changing column name
+census$PostalCode <- str_extract(census$PostalCode, "^.{4}")
+
+listings$zipcode <- str_extract(listings$zipcode, "^.{4}")  
+
+colnames(census)[1] <- "zipcode"
+
+# Joining listings with zip codes
+listings <- left_join(listings, census, by = "zipcode")
+```
+
+```{r read_data, results = FALSE, message = FALSE, warning = FALSE, error = FALSE}
+# Adding the number of amenities per listing
+amenities_count <- as.integer(str_count(listings$amenities, ","))
+amenities_count <- ifelse(amenities_count > 0, amenities_count + 1, amenities_count)
+
+listings <- cbind(listings, amenities_count) 
+
+# Converting columns weekly price, monthly price, cleaning fee, and security deposit to numeric values
+for (i in sequence(6, 67, 1)) {
+  listings[[i]] <- gsub("^.{0,1}", "", listings[[i]])
+  listings[[i]] <- as.numeric(ifelse(nchar(listings[[i]]) == 0, "0", listings[[i]]) %>% str_replace(",", ""))
+}
+
+# Remove rows with no rent data
+listings <- listings %>% filter(weekly_price > 0 | monthly_price > 0)
+
+# Calculating a daily price from either weekly or monthly price
+listings$daily_price <- ifelse(listings$weekly_price > 0, listings$weekly_price / 7, listings$monthly_price / 30)
+
+# Filtering for outliers
+listings <- listings %>% filter(daily_price > 0 & daily_price < 1500)
+
+# Selecting a list of all relevant variables
+var <- c("zipcode", "daily_price", "room_type", "host_is_superhost", "host_identity_verified", "accommodates", "beds", "bed_type", "cancellation_policy", "number_of_reviews", "property_type", "bathrooms", "bedrooms", "amenities_count", "review_scores_rating", "has_availability", "guests_included", "security_deposit", "cleaning_fee", "extra_people","neighbourhood", "availability_30", "weekly_price", "monthly_price", "near_ATTRAC", "near_museum", "near_Performing_arts", "married", "migration", "vio_sex_crimes", "cafes", "restaurants", "hotels", "road", "train")
+
+listings <- listings %>% select(all_of(var)) 
+
+
+# Removing NA values for important regression variables. Annotate how many we lost (Jarred)
+listings <- listings %>% drop_na(cleaning_fee, security_deposit)
+```
+
+Change DESCR \## Exploratory Data Analysis
+
+```{r read_data3, results = FALSE, message = FALSE, warning = FALSE, error = FALSE}
+install.packages("psych")
+library(psych)
+
+
+variables_to_summarize <- c("daily_price", "room_type", 
+                            "near_ATTRAC", "k_nearest_price",
+                            "number_of_reviews", "property_type", 
+                            "bathrooms", "bedrooms",
+                            "review_scores_rating", 
+                            "cancellation_policy", "host_identity_verified",
+                            "accommodates", "beds", "bed_type",
+                            "host_is_superhost", "cleaning_fee",
+                            "security_deposit", "extra_people", 
+                            "zipcode", "availability_30", "neighbourhood","distance")
+
+summary_stats <- listings_train
+
+summary_stats_df <- as.data.frame(summary_stats)
+summary_table <- describe(summary_stats_df[, variables_to_summarize])
+
+
+
+rounded_summary <- t(apply(summary_table, 1, function(x) {
+  if (all(is.numeric(x))) {
+    return(round(x, 2))
+  } else {
+    return(x)
+  }
+}))
+
+# Create the table using kableExtra
+rounded_summary %>%
+  kbl(caption = "Summary Statistics") %>%
+  kable_classic(full_width = F, html_font = "Cambria")
+
+
+```
+
+```{r read_datass, results = FALSE, message = FALSE, warning = FALSE, error = FALSE}
+# Show a of the unlogged daily price (Jarred) 
+gghistogram(
+  data = listings, x = "daily_price", 
+  add = "mean", rug = TRUE,
+  fill = airbnb_color) +
+  labs(title = "Daily AirBnB Price Distribution Amsterdam", caption = "Fig.1") +
+   xlab("Daily Price") +
+   ylab("Count") 
+```
+
+```{r read_data6, results = FALSE, message = FALSE, warning = FALSE, error = FALSE}
+# Log price by Property Type (Jarred) 
+listings$daily_price <- log(listings$daily_price)
+
+gghistogram(
+  data = listings, x = "daily_price", 
+  add = "mean", rug = TRUE,
+  fill = airbnb_color) +
+  labs(title = "Daily AirBnB Price Distribution Amsterdam", caption = "Fig.1") +
+   xlab("Daily Price") +
+   ylab("Count") 
+
+```
+
+```{r read_data7, results = FALSE, message = FALSE, warning = FALSE, error = FALSE}
+# Correlation Matrix (Jarred) 
+corr_vars <- 
+  select_if(st_drop_geometry(listings), is.numeric) %>% na.omit()
+
+corr_vars <- select_if(st_drop_geometry(listings), is.numeric) %>%
+  na.omit()
+
+corr_vars <- corr_vars %>% select(-guests_included)
+
+corr_vars %>% 
+  correlate() %>% 
+  autoplot() +
+  geom_text(aes(label = round(r,digits=2)),size = 2)
+
+```
+
+```{r read_data8, results = FALSE, message = FALSE, warning = FALSE, error = FALSE}
+# Log price by neighborhood (Jarred) 
+listings$neighbourhood <- factor(listings$neighbourhood)
+
+
+colors <- rainbow(length(unique(listings$neighbourhood)))
+faded_colors <- adjustcolor(colors, alpha.f = 0.4) 
+
+ggplot(data = listings, aes(x = neighbourhood, y = daily_price, fill = neighbourhood)) + 
+  geom_boxplot() +
+  scale_fill_manual(values = faded_colors, name = "Neighborhoods") + 
+  theme_minimal() +
+  labs(y = "Logarithm of Price", x = "", title = "Logarithm of Daily Price by Neighborhood.") +
+  theme(
+    axis.text.x = element_blank(), 
+    legend.position = "bottom", 
+    legend.title.align = 0.5, 
+    plot.title = element_text(hjust = 0.5) 
+  ) +
+  guides(fill = guide_legend(nrow = 5, byrow = TRUE, title.position = "top")) 
+
+```
+
+```{r read_data9, results = FALSE, message = FALSE, warning = FALSE, error = FALSE}
+# Log price by Room Type (Jarred) 
+faded_colors2 <- adjustcolor(colors, alpha.f = 0.6) 
+
+ggplot(data = listings, aes(x = room_type, y = daily_price, fill = room_type)) + 
+  geom_boxplot() +
+  scale_fill_manual(values = faded_colors2, name = "Listing Type") + 
+  theme_minimal() +
+  labs(y = "Logarithm of Price", x = "", title = "Logarithm of Daily Price by Listing Type") +
+  theme(
+    axis.text.x = element_blank(), 
+    legend.position = "bottom", 
+    legend.title.align = 0.5, 
+    plot.title = element_text(hjust = 0.5) 
+  ) +
+  guides(fill = guide_legend(nrow =1, byrow = TRUE, title.position = "top")) 
+```
+
+```{r read_data99, results = FALSE, message = FALSE, warning = FALSE, error = FALSE}
+# Checking if we have too many categories in a variable
+
+roomtype <- unique(listings$room_type)
+length(roomtype)
+
+property_type <- unique(listings$property_type)
+length(property_type)
+
+property_type <- unique(listings$property_type)
+length(property_type)
+
+sum(is.na(listings$square_feet))
+
+listings <- listings %>% mutate(extra_people_is_cost = ifelse(listings$extra_people %in% c("$0.00"), "No", "Yes"))
+
+
+
+variables_to_summarize <- c("room_type", "daily_price", "beds", "accommodates", "bed_type",
+                            "bathrooms", "bedrooms", "amenities_count", "review_scores_rating")
+
+
+unique_values_df <- data.frame(Variable = character(), Unique_Values = integer(), stringsAsFactors = FALSE)
+
+
+for (var in variables_to_summarize) {
+  unique_values_df <- rbind(unique_values_df, data.frame(Variable = var, Unique_Values = length(unique(listings[[var]]))))
+}
+
+
+unique_values_df %>%
+  kbl(caption = "Variable Values") %>%
+  kable_classic(full_width = F, html_font = "Cambria")
+```
+
+```{r map_1}
+# Calculating averages per neighborhood
+avg_nhood <- listings %>%
+  group_by(neighbourhood) %>%
+  summarize(avg_road = mean(road, na.rm = TRUE), 
+            avg_cafes = mean(cafes, na.rm = TRUE), 
+            avg_restaurants = mean(restaurants, na.rm = TRUE), 
+            avg_hotels = mean(hotels, na.rm = TRUE), 
+            avg_train=mean(train, na.rm = TRUE), 
+            avg_price = exp(mean(daily_price, na.rm = TRUE)),
+            avg_attrac = mean(near_ATTRAC, na.rm = TRUE),
+            avg_amenities = mean(amenities_count, na.rm = TRUE))
+
+neighbourhood_boundaries <- nhoods
+
+# Adding neighborhood boundary info
+neighbourhood_boundaries$neighbourhood <- as.character(neighbourhood_boundaries$neighbourhood)
+avg_nhood$neighbourhood <- as.character(avg_nhood$neighbourhood)
+
+merged_data_sf <- st_join(neighbourhood_boundaries, avg_nhood)
+
+# Looping to save a map for each variable inside. We save the ggplots in the object "maps"
+maps <- lapply(c("avg_price", "avg_road", "avg_cafes", "avg_restaurants", "avg_hotels", "avg_train", "avg_attrac", "avg_amenities"), function(i) {  
+  ggplot()+
+  geom_sf(data = merged_data_sf, aes(fill = (avg_nhood[[i]])))+
+  theme_void()})
+
+maps[[1]] +  labs(title = "Average Price", caption = "Fig.1") + 
+             scale_fill_gradient(low = "white",high = airbnb_color, name = "Price Gradient in USD") +
+             labs(title = "Avg. Daily AirBnB Price in Amsterdam", caption = "Fig.1")
+```
+
+```{r read_data88, results = FALSE, message = FALSE, warning = FALSE, error = FALSE}
+# Distance to city center (why are there NA's?)
+MRB <- multipleRingBuffer(st_union(listings %>% filter(neighbourhood == "Centrum-West")), 11000, 200)
+
+listings <- st_join(listings, MRB, join = st_intersects) %>% 
+            st_sf()
+
+listings <- listings %>% mutate(distance = ifelse(listings$neighbourhood == "Centrum-West", 0, distance))
+
+# Map of MRB and data points
+ggplot() + geom_sf(data = MRB) + geom_sf(data = listings)
+
+# Distance vs price plot
+ggplot() +  geom_line(data = listings, 
+                  aes(x = distance, 
+                      y = daily_price), 
+                      stat = "summary", 
+                      fun = mean) +
+         labs(title = "Median Rent as Function of Distance in Miles",
+              caption = "Fig.9") +
+         xlab("Distance in Miles") +
+         ylab("Median Rent in US-Dollars") +
+         theme_bw(base_rect_size = 2) +
+         theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+```
+
+-   public transport is good, doesn't matter where we are
+
+# Methods & Results
+
+Regression Variables:
+
+Spatial Features: -nhood -k nearest neighboors price per sqft
+
+Non-Spatial (hedonic) Features: - room type - number of reviews -
+availability - is super host - identity verified - property type -
+accomodates / guests_included? - bathrooms - bedrooms - break up the
+amenities - sqft is not there for all - review_scores_rating - costs
+extra? - is real bed? - cleaning fee - cancellation policy
+
+# Training Regression
+
+```{r regression, results = 'hide', fig.align= 'center', warning = FALSE, message = FALSE, error = FALSE }
+# Partitioning data set into training and test
+set.seed(1000)
+
+inTrain <- createDataPartition(
+              y = paste(listings$daily_price,
+                        listings$zipcode,
+                        listings$neighbourhood),
+              p = .6, list = FALSE)
+
+# Filtering out factors in features that occur seldomly to avoid "new levels" error
+listings_train <- listings[inTrain,] %>% filter(!room_type %in% c("Shared room"), !property_type %in% c("Boutique hotel", "Bungalow", "Cabin", "Chalet", "Nature lodge", "Villa", "Serviced apartment"), !bed_type %in% c("Airbed"))
+
+listings_test <- listings[-inTrain,] %>% filter(!room_type %in% c("Shared room"), !property_type %in% c("Boutique hotel", "Bungalow", "Cabin", "Chalet", "Nature lodge", "Villa", "Serviced apartment"), !bed_type %in% c("Airbed"))
+
+# Adding nearest neighbours
+coords.test.training <-  st_coordinates(listings_train) 
+
+neighborList.training <- knn2nb(knearneigh(coords.test.training, 5))
+
+spatialWeights.training <- nb2listw(neighborList.training, style="W")
+
+
+listings_train <- listings_train %>% mutate(k_nearest_price = lag.listw(spatialWeights.training, daily_price) / accommodates)
+
+# Running regression
+  reg_train <- 
+    lm(daily_price ~ ., data = as.data.frame(listings_train) %>% 
+                               dplyr::select(daily_price,
+                                             room_type,
+                                             near_ATTRAC,
+                                             k_nearest_price,
+                                             number_of_reviews,
+                                             property_type,
+                                             bathrooms,
+                                             bedrooms,
+                                             review_scores_rating,
+                                             cancellation_policy,
+                                             host_identity_verified,
+                                             accommodates,
+                                             beds,
+                                             bed_type,
+                                             host_is_superhost,
+                                             cleaning_fee,
+                                             security_deposit,
+                                             extra_people,
+                                             availability_30,
+                                             zipcode,
+                                             neighbourhood,
+                                             distance))
+  
+summary(reg_train)$r.squared
+```
+
+```{r regression7, results = 'hide', fig.align= 'center', warning = FALSE, message = FALSE, error = FALSE }
+set.seed(1000)
+
+loop <- c("daily_price", "room_type", "near_ATTRAC", "k_nearest_price", "number_of_reviews", "property_type", "bathrooms", "bedrooms", "review_scores_rating", "cancellation_policy", "host_identity_verified", "accommodates", "beds", "bed_type", "host_is_superhost", "cleaning_fee", "security_deposit", "extra_people", "availability_30", "zipcode", "neighbourhood", "distance")
+
+results <- vector()
+
+for (i in sequence(length(loop),1,1)) {
+ words <- loop[1:i]  
+ 
+ reg_train <- 
+    lm(daily_price ~ ., data = as.data.frame(listings_train) %>% 
+                               dplyr::select(words))
+  
+results [[i]] <- summary(reg_train)$r.squared
+}
+
+results <- as.data.frame(cbind(loop, results)) %>% mutate(lagged_results = lag(results), change = as.numeric(results) - as.numeric(lagged_results))
+```
+
+# Training Regression Results
+
+```{r result_traiining_set7, fig.align= 'center', warning = FALSE, message = FALSE, error = FALSE}
+# Adding Baseline Regression predictions to data set and adding KPI's
+listings_train <- listings_train %>% na.omit()
+
+listings_train <-
+  listings_train %>%
+  mutate(Regression = "Baseline Regression",
+         daily_price.predict = predict(reg_train, listings_train),
+         daily_price.error = daily_price.predict - daily_price,
+         daily_price.abserror = abs(daily_price.predict - daily_price),
+         daily_price.ape = (abs(daily_price.predict - daily_price)) / daily_price.predict)%>%
+  filter(!is.na(daily_price.abserror))
+
+
+# Saving results in table 
+results_train <- data.frame(MAE = mean(listings_train$daily_price.abserror, na.rm = T), MAPE =  mean(listings_train$daily_price.ape, na.rm = T))
+
+results_train %>%
+  kbl(caption = "Training Results") %>%
+  kable_classic(full_width = F, html_font = "Cambria")
+```
+
+# Test Regression
+
+```{r read_data5, results = FALSE, message = FALSE, warning = FALSE, error = FALSE}
+# Adding nearest neighbours
+coords.test.2 <-  st_coordinates(listings_test) 
+
+neighborList.test.2 <- knn2nb(knearneigh(coords.test.2, 3))
+
+spatialWeights.test.2 <- nb2listw(neighborList.test.2, style="W")
+
+listings_test <- listings_test %>% mutate(k_nearest_price = lag.listw(spatialWeights.test.2, daily_price) / accommodates)
+
+# Applying regression model to test set and adding KPI's
+listings_test <-
+  listings_test %>%
+  mutate(Regression = "Baseline Regression",
+         daily_price.predict = predict(reg_train, listings_test),
+         daily_price.error = daily_price.predict - daily_price,
+         daily_price.abserror = abs(daily_price.predict - daily_price),
+         daily_price.ape = (abs(daily_price.predict - daily_price)) / daily_price.predict)%>%
+  filter(daily_price < 3000000, !is.na(daily_price.abserror))
+
+
+# Saving results in table 
+results_test <- data.frame(MAE = mean(listings_test$daily_price.abserror, na.rm = T), MAPE =  mean(listings_test$daily_price.ape, na.rm = T))
+
+results_test %>%
+  kbl(caption = "Test Results") %>%
+  kable_classic(full_width = F, html_font = "Cambria")
+
+# Visualizing spatial error
+ggplot() +
+  geom_sf(data = listings_test, fill ="grey40" ,colour = "white") +
+  geom_sf(data = listings_test, aes(colour = q5(daily_price.error)),
+          size = 1) +
+  scale_colour_manual(values = palette6,
+                      labels = qBr(listings_test, "daily_price.error"),
+                      name = "Quintile \n Breaks")+
+   labs(title = "daily_price Amsterdam") +
+  mapTheme()
+```
+
+# Moran's I Test
+
+```{r moran_mc, fig.align= 'center', warning = FALSE, message = FALSE, error = FALSE}
+moranTest <- moran.mc(listings_test$daily_price.error, 
+                      spatialWeights.test.2, nsim = 999)
+
+morans_plot <-ggplot(as.data.frame(moranTest$res[c(1:999)]), aes(moranTest$res[c(1:999)])) +
+  geom_histogram(binwidth = 0.01) +
+  geom_vline(aes(xintercept = moranTest$statistic), colour = "#FA7800",size=1) +
+  scale_x_continuous(limits = c(-1, 1)) +
+  labs(title="Observed and permuted Moran's I",
+       subtitle= "Observed Moran's I in orange",
+       x="Moran's I",
+       y="Count") +
+  plotTheme()
+
+morans_plot
+```
+
+## Cross-Validation
+
+```{r result_cross_validation, results = 'hide', fig.align= 'center', warning = FALSE, message = FALSE, error = FALSE}
+# Specifying 100-fold CV as computational nuance
+fitControl <- trainControl(method = "cv", number = 100)
+
+set.seed(825)
+
+# Running 100-fold CV
+reg.cv <- 
+  train(daily_price ~ ., data = st_drop_geometry(listings_train) %>% 
+                               dplyr::select(daily_price,
+                                             room_type,
+                                             near_ATTRAC,
+                                             k_nearest_price,
+                                             number_of_reviews,
+                                             property_type,
+                                             bathrooms,
+                                             bedrooms,
+                                             review_scores_rating,
+                                             cancellation_policy,
+                                             host_identity_verified,
+                                             accommodates,
+                                             beds,
+                                             bed_type,
+                                             host_is_superhost,
+                                             cleaning_fee,
+                                             security_deposit,
+                                             extra_people,
+                                             availability_30,
+                                             zipcode,
+                                             neighbourhood,
+                                             distance), 
+     method = "lm", trControl = fitControl, na.action = na.pass)
+
+reg.cv$resample[1:100,]
+```
+
+```{r result_cross_validation_graph, fig.align= 'center', warning = FALSE, message = FALSE, error = FALSE}
+ggplot(reg.cv$resample) +
+  aes(MAE) +
+  geom_histogram(bins=15)
+```
+
+-   explain why we only did a count on ameniities (because they range to
+    very smimilar objects)
+-   justify why we predict daily price with weekly (monthly usually has
+    discount, most people book for fewer days. Prove this with data)
+
+medhh income pct education pct immigrants marital status year built
+Profession distance to tourist attractions
+
+Check instances for each variable
+
+Questions for Michael: 1. Is our idea valid? (added variables crime
+rate, percent immigrant, medhhincome, avg distance to tourist
+attraction)
+
+Can't rent multiple properties (companies need special permit) 30 nights
+limit
+
+Insights: macro features like crime rate migration are not effecting
+model much since europe is more equal -\> need more data on internal
+house characteristics
+
+city could link sqaure foot to apartment sizes
+
+Graph distance to airbnb price How can we link airbnb names to people?
+Have data base!
+
+```{r read_data, results = FALSE, message = FALSE, warning = FALSE, error = FALSE}
+#JArred
+listings <- read.csv("C:\\Users\\fatbo\\OneDrive\\Desktop\\Airbnb\\Airbnb\\listings.csv")
+
+listings_details <- read.csv("C:\\Users\\fatbo\\OneDrive\\Desktop\\Airbnb\\Airbnb\\listings_details.csv")
+
+nhoods <- st_read("C:\\Users\\fatbo\\OneDrive\\Desktop\\Airbnb\\Airbnb\\neighbourhoods.geojson")
+
+joined <- left_join(listings, listings_details, by = "id", suffix=c("", ".y")) %>% select(-ends_with(".y"))
+
+attraction_distance <- read.csv("C:\\Users\\fatbo\\OneDrive\\Documents\\GitHub\\Final_PPA\\Data\\Airbnb\\distance_attrac.csv")
+
+income <- read.csv("C:\\Users\\fatbo\\OneDrive\\Documents\\GitHub\\Final_PPA\\Data\\Amsterdam_income.csv")
+
+census <- read.csv("C:\\Users\\fatbo\\OneDrive\\Documents\\GitHub\\Final_PPA\\Data\\final_census.csv")
+
+```

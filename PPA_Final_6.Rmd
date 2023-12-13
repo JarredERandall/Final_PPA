@@ -1,7 +1,14 @@
 ---
 title: "FairBnB"
-output: html_document
-date: "2023-12-15"
+output: 
+  html_document:
+    citation_package: biblatex
+bibliography: "C:/Users/fatbo/OneDrive/Documents/GitHub/Final_PPA/Bibli.bib/airbnb.bib"
+biblio-style: "chicago-notes"
+date: "2023-12-01"
+editor_options: 
+  markdown: 
+    wrap: 72
 ---
 
 ```{r setup, include=FALSE}
@@ -51,8 +58,150 @@ theme_update(plot.title = element_text(hjust = 0.5))
 
 # Intro
 
+# Intro
+
+Overtourism is a polarizing issue plaguing the city of Amsterdam,
+sparking widespread debate and concern among both residents and
+policymakers.[^1] Overtourism is defined as a situation in which too
+many tourists travel to a popular destination, causing the place to
+suffer negative environmental, economic, and sociocultural impacts.[\^4]
+In 2019, the number of tourists to Amsterdam inhabitants was a
+staggering 2,341% (figure 1), indicating that for every local there were
+roughly 23 tourists. This disproportionate influx has led to
+tourism-based gentrification in Amsterdam, a phenomenon where residents
+are displaced as services and housing are increasingly tailored to meet
+tourist demands rather than those of the local population. The resulting
+consequences have been significant, manifesting in a dwindling housing
+stock, spiraling rental prices (Figure 2), and an increase in noise
+ordinances and public disturbances.[\^2]
+
+[^1]: DutchNews.nl. 2022. "Airbnb-Style Rentals Harmful to
+    Amsterdam,Says Tourism Chief."
+    <https://www.dutchnews.nl/2022/10/airbnb-style-rentals-harmful-to-amsterdam-says-tourism-chief/>.
+
+[@airbnb2023dutchregulations; @radnovic2019airbnb; @msuilr2018airbnb;
+@statista2023netherlands; @dutchnews2022airbnb; @dictionary;
+@amsterdam2023rentalpermit]
+
+![Figure 1. Amsterdam's number of inhabitants vs inbound
+overnight](Presentation%20graphics/markdown_graphics/pop.png){width="8.6in"}
+
+![Figure 2. Average rent price of residential property in major
+Netherlands
+cities](Presentation%20graphics/markdown_graphics/AVG_RENT.png)
+
+The dramatic surge in tourist numbers has unsurprisingly correlated with
+a rise in short-term rental accommodations, including Airbnb listings,
+which have grown exponentially over the years. This growth is
+underscored by the rise in Airbnb guests throughout the Netherlands,
+from 75,000 in 2012 to 1.6 million in 2017.[\^2] Specifically, within
+Amsterdam itself, Airbnb property listings have skyrocketed from 2,400
+listings in 2012 to an overwhelming 19,619 by 2019 [\^4], reflecting the
+platform's substantial impact on the city's housing market.
+
+*listing graph*(Figure3)
+
+*listing map?*
+
+To mitigate the mounting pressures from the influx of Airbnb listings
+and the consequent housing issues, Amsterdam took proactive steps by
+becoming the world's first city to establish regulations on Airbnb
+rentals, forming a partnership with the platform itself. This pioneering
+move aimed to regulate the short-term rental market that had, until
+recently operated with little oversight, aims to address the community's
+concerns over noise disturbances, the shrinking supply of residential
+housing, and the preservation of neighborhood character.[\^2] These
+regulations include.
+
+-   **Listings cannot be rented out for more than 30 days a year**: If
+    listings reach or go over their yearly allotment of rental days the
+    city of Amsterdam can request that Airbnb block out the listings
+    calendar for the remainder of the year.[\^6]
+
+-   **Hosts cannot rent out multiple properties**: Hosts are not allowed
+    to rent out additional properties such as summer houses, tents, or
+    houseboats.[\^6][\^7]
+
+-   **All listings must have a permit and registration number**: In
+    order homes to be listed on Airbnb hosts need to obtain a vacation
+    rental permit from the city of Amsterdam. These permits are
+    temporary and must be renewed annually.[\^6][\^7]
+
+-   **Rental must be the hosts main residence**: The host must be
+    registered as living at the listing address in the Personal Records
+    Database (BRP) of the municipality of Amsterdam.[\^6][\^7]
+
+-   \*\* Notification of booking\*\*: According to Amsterdam Housing
+    Regulations hosts are required to notify the city every time they
+    rent out their home prior to the first day of check in.[\^6][\^7]
+
+-   **Housing corporation and social housing rentals cannot be listed**:
+    Rental properties from housing corporations, social housing, or rent
+    controlled apartments may not be listed as Airbnb rentals.[\^6][\^7]
+
+\*FairBNB logo\*\*
+
+While Amsterdam has taken a step forward by establishing these
+regulations, the city's next challenge lies in developing and
+implementing effective monitoring and enforcement mechanisms to ensure
+that these regulations address the challenges posed by short-term
+rentals and their contribution to overtourism. Given the complexities
+associated with the regulation of Airbnb and similar platforms, it
+becomes imperative for Amsterdam to explore innovative solutions that
+can effectively bridge the gap between policy and enforcement. Fairbnb
+emerges as groundbreaking app crafted to align with Amsterdam's
+regulatory framework. This application is not merely a response to the
+existing challenges, but a forward-thinking approach designed to
+complement and enhance the city's efforts in regulating short-term
+rentals. Fairbnb's features enable precise tracking of rental days,
+ensures hosts adhere to the one-rental property rule, and introduces a
+new fair-market pricing feature accompanied by an additional policy
+recommendation.
+
+**tracking Rental days**
+
+Fairbnb is designed to meticulously monitor listings to ensure they do
+not exceed the 30-day annual rental allotment. This is achieved through
+a comprehensive tracking system that utilizes data provided by the city
+of Amsterdam, directly from Airbnb, and additional information obtained
+through web scraping. The app features a state-of-the-art alert system
+that informs the city of Amsterdam about listings that are approaching,
+have reached, or have exceeded the 30-day limit. Once a listing reaches
+this threshold, Fairbnb will promptly notify Airbnb, enabling them to
+block the listing's calendar for the remainder of the year.
+
+*Insert graphics*
+
+**tracking Multiple Rental Properties** Fairbnb is also designed to
+identify hosts who list multiple properties by utilizing an advanced
+detection system that analyzes data provided by the city of Amsterdam,
+Airbnb, and additional data collected with web-scraping techniques. By
+cross-referencing this information, the app can accurately pinpoint
+hosts who might be in violation of the one-property rule. Upon
+identifying such cases, Fairbnb sends notifications to the city
+authorities, providing them with detailed insights about potential
+violations. In addition, the app communicates with Airbnb to initiate
+appropriate actions against these listings.
+
+*Insert graphics*
+
+\*\* new fair-market pricing\*\* Beyond assisting in the monitoring and
+enforcement of existing regulations, Fairbnb proposes an innovative
+addition: a fair pricing regulation, supported by a corresponding
+feature within the app. This initiative focuses on monitoring and
+curbing price gouging in Airbnb rentals, serving as a deterrent for
+hosts contemplating short-term rentals, thereby aiding in alleviating
+the issues of shrinking housing stock and overtourism. The proposed
+system will leverage historical Airbnb listing and pricing data,
+complemented by data obtained through web scraping, to establish a
+fair-market daily rental price. The mechanics of this advanced
+fair-market pricing system will be elaborated further in the
+methodologies section of the proposal. *Insert graphics*
+
 # Data
+
 ## Data Import
+
 ```{r read_data, results = FALSE, message = FALSE, warning = FALSE, error = FALSE}
 listings <- read.csv("/Users/nohman/Documents/GitHub/PPA_Final_Airbnb/Data/Airbnb/listings.csv")
 
@@ -68,7 +217,8 @@ census <- read.csv("/Users/nohman/Documents/GitHub/Final_PPA/Data/final_census.c
 ```
 
 ## Data Wrangling
-``` {r manipulating and joining data sf}
+
+```{r manipulating and joining data sf}
 # Joining data sets, converting to crs
 attraction_distance <- attraction_distance %>% transform(zipcode = as.character(zipcode))
 
@@ -140,7 +290,9 @@ listings <- listings %>% drop_na(cleaning_fee, security_deposit)
 ```
 
 ## Exploratory Data Analysis
+
 ### Dependent Variable
+
 ```{r daily price visualization, results = FALSE, message = FALSE, warning = FALSE, error = FALSE}
 # Show a of the unlogged daily price (Jarred) 
 gghistogram(
@@ -151,6 +303,7 @@ gghistogram(
    xlab("Daily Price") +
    ylab("Count") 
 ```
+
 We constructed our dependent variable, the daily price of renting an AirBnB in Amsterdam, by dividing the week price by seven or the monthly price by thirty. Since longer bookings usually include greater discounts, and since a week is shorter than a month, we preferred calculating the daily price from the weekly price, and only if the weekly price was not available, we would normalize the monthly price to a daily price.
 
 When visualizing the daily price, we see a heavy right-skew. Since our model will employ OLS regression, normalized variables are preferred since they can increase the performance and significance of the model.
@@ -170,14 +323,17 @@ gghistogram(
    ylab("Count") 
 
 ```
+
 The log transformed daily price shows an approximate normal distribution and will therefore be used as dependent variable for the regression model.
 
 ### Independent Variables (Predictors)
-We want to build a hedonic housing price model that includes 1) internal features of the house, the 2) spatial process, 3) demographics, 4) centrality, and 5) infrastructural variables. 
+
+We want to build a hedonic housing price model that includes 1) internal features of the house, the 2) spatial process, 3) demographics, 4) centrality, and 5) infrastructural variables.
 
 To pick meaningful predictors, we set up a correlation matrix and observe values that have a high correlation with our dependent variable. Note that it doesn't matter if the correlation is negative or positive- high values in both contain potentially valuable information for the model.
 
 In the next subsections, we will go through each of these points, explain which features we engineered, and whether the correlation matrix gives us a reason to include these features in our model.
+
 ```{r visual_1}
 # Calculating averages per neighborhood
 avg_nhood <- listings %>%
@@ -227,31 +383,35 @@ corr_vars %>%
   autoplot() +
   geom_text(aes(label = round(r,digits=2)),size = 2)
 ```
+
 One interesting observation from the correlation matrix upfront is that daily price is much more correlated with weekly price (0.87) than with monthly price (0.4) implying that it is likely that for most daily price calculations, we actually had a weekly price value and didn't have to use the monthly price to infer the daily price. This is good for the model for reasons related to long-term rental discounts as mentioned above.
 
 Setting the threshold at 0.9, we also see that only restaurants and cafes show excessive colinearity.
 
 #### Hedonic Variables
+
 #### Numeric Hedonic Predictors
-As for hedonic variables, we used the predictors in the given data set and engineered a new feature called amenities count, to which we will get later. 
 
-As expected, the correlation matrix shows that number of accommodates (0.55), bedrooms (0.54), beds (0.53), and bathrooms (0.33) are the leading four values. What is interesting is that all of these predictors are essentially proxies for the size of a listing. Since we know that usually, square feet is among the top housing price predictors, but we unfortunately don't have that data for most of our observations, it only makes sense that these "best proxies" have the highest absolute correlation with the daily price. 
+As for hedonic variables, we used the predictors in the given data set and engineered a new feature called amenities count, to which we will get later.
 
- *Table number of houses with and without sqft*
- 
-Another interesting observation is that the number of bathrooms is less positively correlated with daily price as the other three predictors- a result that is counter-intuitive since most of our work was done in the North American context. Upon some research, there is an easy explanation for that: European houses, on average, simply have fewer bathrooms, even when normalized on a per square feet basis (https://www.theatlantic.com/ideas/archive/2020/01/why-do-american-houses-have-so-many-bathrooms/605338/).
+As expected, the correlation matrix shows that number of accommodates (0.55), bedrooms (0.54), beds (0.53), and bathrooms (0.33) are the leading four values. What is interesting is that all of these predictors are essentially proxies for the size of a listing. Since we know that usually, square feet is among the top housing price predictors, but we unfortunately don't have that data for most of our observations, it only makes sense that these "best proxies" have the highest absolute correlation with the daily price.
 
-The remaining hedonic variables that show some correlation are the cleaning fee (0.39) and the security deposit (0.2). With regard to cleaning fees, it makes sense that more expensive listings will charge higher fees as they have likely more expensive interieur and a greater area to clean. 
+*Table number of houses with and without sqft*
+
+Another interesting observation is that the number of bathrooms is less positively correlated with daily price as the other three predictors- a result that is counter-intuitive since most of our work was done in the North American context. Upon some research, there is an easy explanation for that: European houses, on average, simply have fewer bathrooms, even when normalized on a per square feet basis (<https://www.theatlantic.com/ideas/archive/2020/01/why-do-american-houses-have-so-many-bathrooms/605338/>).
+
+The remaining hedonic variables that show some correlation are the cleaning fee (0.39) and the security deposit (0.2). With regard to cleaning fees, it makes sense that more expensive listings will charge higher fees as they have likely more expensive interieur and a greater area to clean.
 
 What is surprising, however, is that the security deposit is only half as strongly correlated with listing price as the cleaning fee. Intuitively, the strength of correlation between cleaning fee and security deposit should approximately match.
 
-There are several explanations as to why there is this difference. Firstly, if the host sets no security deposit amount himself, AirBnB will calculate itself an automated rate that takes 60% of a nights fee times the number of nights rented. This, however, is capped at 1000$. This implies that expensive listings with no host set price cap are only requiring a rather low security deposit. Another reason is likely that high security deposits make a listing less likely to be booked by increasing the barriers to book the apartment. A host tries to make his listing attractive, and listings that have good features and are well situated with rather low security deposits are more likely to be booked than similar apartments with rather high security deposits.
+There are several explanations as to why there is this difference. Firstly, if the host sets no security deposit amount himself, AirBnB will calculate itself an automated rate that takes 60% of a nights fee times the number of nights rented. This, however, is capped at 1000\$. This implies that expensive listings with no host set price cap are only requiring a rather low security deposit. Another reason is likely that high security deposits make a listing less likely to be booked by increasing the barriers to book the apartment. A host tries to make his listing attractive, and listings that have good features and are well situated with rather low security deposits are more likely to be booked than similar apartments with rather high security deposits.
 
-*Graph with apartments greater than 100$ per night and their average security deposit vs apartments with less than and their average*
+*Graph with apartments greater than 100\$ per night and their average security deposit vs apartments with less than and their average*
 
 Surprisingly, the engineered feature amenities count which counts the number of amenities in a listing is only weakly correlated with the price. This is because users are rather inconsistent in naming all features, and many low priced homes have many of the features like a couch, TV, etc. The only way to discriminate an expensive from an inexpensive listing could be "special features" like pools, gaming rooms, and so forth - but in a count, a pool and a TV would both simply add one the count.
 
 #### Non-Numeric Hedonic Predictors
+
 As for non-numeric hedonic predictors, we look at the property type. This is an obvious predictor to pick since shared rooms, for instance, are likely to be much less expensive that whole houses.
 
 ```{r visual_3, results = FALSE, message = FALSE, warning = FALSE, error = FALSE}
@@ -274,7 +434,8 @@ ggplot(data = listings, aes(x = room_type, y = exp(daily_price), fill = room_typ
 ```
 
 #### Spatial process
-A regression run purely on hedonic factors results in an $R^2$ of 0.4. This value is relatively low, and one could argue that including the spatial process could increase it significantly. 
+
+A regression run purely on hedonic factors results in an $R^2$ of 0.4. This value is relatively low, and one could argue that including the spatial process could increase it significantly.
 
 ```{r visual_4, results = FALSE, message = FALSE, warning = FALSE, error = FALSE}
 # Log price by neighborhood (Jarred) 
@@ -295,26 +456,28 @@ ggplot(data = listings, aes(x = neighbourhood, y = exp(daily_price), fill = neig
   ) +
   guides(fill = guide_legend(nrow = 5, byrow = TRUE, title.position = "top")) 
 ```
-We clearly see that neighbourhoud can explain some of the daily price. But we also see that the effect is not as strong as we would see it in some US cities. 
+
+We clearly see that neighbourhoud can explain some of the daily price. But we also see that the effect is not as strong as we would see it in some US cities.
 
 Additionally, we see that central districts like Centrum West are usually more highly priced than neighbourhods farther away. We will therefore engineer the distance-to-center vs daily price relation in a later section.
 
-Adding the neighourhoud effects and even the k-nearest neighbors only increases $R^2$ to 0.5. What this implies is that neighbourhood and k-nearest can help explain a significant portion of the variance in price, but by far not most of it. In simple terms, our model is missing vital information, and this only makes sense: K-nearest are a better predictor for very densely populated housing price predictions since we can be assured that we will have very immediate neighbors with likely the same features. 
+Adding the neighourhoud effects and even the k-nearest neighbors only increases $R^2$ to 0.5. What this implies is that neighbourhood and k-nearest can help explain a significant portion of the variance in price, but by far not most of it. In simple terms, our model is missing vital information, and this only makes sense: K-nearest are a better predictor for very densely populated housing price predictions since we can be assured that we will have very immediate neighbors with likely the same features.
 
-However, our data set is not as dense, meaning that our k-nearest observations are quite far away, and that as a consequence, we could even switch between neighbourhouds. Additionally, we are missing the square feet size of each apartment, a core predictor for each pricing prediction. 
+However, our data set is not as dense, meaning that our k-nearest observations are quite far away, and that as a consequence, we could even switch between neighbourhouds. Additionally, we are missing the square feet size of each apartment, a core predictor for each pricing prediction.
 
 One finding in support of this argument is that in a later section, our regression accuracy will only increase by 0.02 when changing our k from 5 to 10 in the k nearest neighbor function. This implies that surrounding listings do nearly nothing to explain the value of the listing itself.
 
-*Add average distance to k nearest neighbors (use spatstats package) nndist(listings, 5) spatstats OR say that changing k nearest from 5 to 20 doesn't make a big difference in the model -> low spatial process -> more hedonic variables for prediction*
+*Add average distance to k nearest neighbors (use spatstats package) nndist(listings, 5) spatstats OR say that changing k nearest from 5 to 20 doesn't make a big difference in the model -\> low spatial process -\> more hedonic variables for prediction*
 
 Given the above observations, we therefore tried to come up with demographic and infrastructural feature engineering to improve the model.
 
 #### Demographics
+
 The idea behind demographic features is that they could contain information on the AirBnB price as customers surely are concerned about their safety and social environment of their AirBnB.
 
 We therefore assume two things: First, that customers do good research before committing to an AirBnB and are willing to pay a premium for more safe neighbourhoods, and secondly, that these demographic features are not evenly distributed in the suburbs, but show peaks and lows depending on whether a neighborhood is good and therefore highly priced, or not.
 
-With this in mind, we imported data on the percentage of migrants, number of violent sex crimes, and the proportion of married population for each listing. It is rather surprising to see that these demographics don't really have an effect on the correlation. 
+With this in mind, we imported data on the percentage of migrants, number of violent sex crimes, and the proportion of married population for each listing. It is rather surprising to see that these demographics don't really have an effect on the correlation.
 
 As explained above, one reason for this could be that all some of these factors are rather distributed throughout expensive and non-expensive listings in the city and therefore would not help our model discriminate high priced from low priced listings.
 
@@ -326,6 +489,7 @@ maps[[9]] +  labs(title = "Average Price", caption = "Fig.1") +
              scale_fill_gradient(low = "white",high = airbnb_color, name = "Price Gradient in USD") +
              labs(title = "Avg. Daily AirBnB Price in Amsterdam", caption = "Fig.1")
 ```
+
 We first observe that there is a hotspot for crimes in the same area in which there are many cafes, as we had previously predicted.
 
 ```{r visual_6, results = FALSE, message = FALSE, warning = FALSE, error = FALSE}
@@ -334,6 +498,7 @@ maps[[3]] +  labs(title = "Average Price", caption = "Fig.1") +
              scale_fill_gradient(low = "white",high = airbnb_color, name = "Price Gradient in USD") +
              labs(title = "Avg. Daily AirBnB Price in Amsterdam", caption = "Fig.1")
 ```
+
 We then see that the areas with high migrant population are not those where most crimes occur, and that areas with high migrant population also have high marriage rates.
 
 ```{r visual_7, results = FALSE, message = FALSE, warning = FALSE, error = FALSE}
@@ -349,9 +514,11 @@ maps[[11]] +  labs(title = "Average Price", caption = "Fig.1") +
              scale_fill_gradient(low = "white",high = airbnb_color, name = "Price Gradient in USD") +
              labs(title = "Avg. Daily AirBnB Price in Amsterdam", caption = "Fig.1")
 ```
+
 However, the whole central-west side of the city has quite high marriage rates, implying that if our hypothesis that most expensive apartments are in the center is true, marriage would not be as strong a predictor as we'd wish.
 
 #### Centrality
+
 European cities are generally more center focused. This is to say that there is always a central part of the town in which most commerce, infrastructure, but also tourism happens. The areas around the center are rather constructed such that they cater toward the central district.
 
 With all these properties, the assumption that tourists will be willing to pay a premium to live close to central makes sense. And even though a great public transportation network may attenuate that willingness, there still should be a visible trend.
@@ -382,19 +549,19 @@ ggplot() +  geom_line(data = listings %>% filter(distance < 6000),
          theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())
 ```
 
-The graph clearly shows a distance-to-center gradient in price, but we make two observations. Firstly,  even though the general trend is downward sloping, there are many fluctuations inherent in the graph. These could either be wealthy neighbourhouds or a sign that Amsterdam is a rather "equal" city.
+The graph clearly shows a distance-to-center gradient in price, but we make two observations. Firstly, even though the general trend is downward sloping, there are many fluctuations inherent in the graph. These could either be wealthy neighbourhouds or a sign that Amsterdam is a rather "equal" city.
 
-Secondly, most observations find themselves between 80-120$, a price difference that is not incredibly stark given that one apartment is in the heart of the center and another one is 6 miles away. This speaks for our comment that good public transport and an even demographic might attenuate the distance-to-center price gradient. 
+Secondly, most observations find themselves between 80-120\$, a price difference that is not incredibly stark given that one apartment is in the heart of the center and another one is 6 miles away. This speaks for our comment that good public transport and an even demographic might attenuate the distance-to-center price gradient.
 
 To answer the question from previous section, we see why marriage and migration would not be as strong a predictor as we'd wish. This is because both are high in the whole central west of the city, but prices rather steadily, even if not strongly, decline. Additionally, there are also highly valued listings in the east of the city where marriage and migration rates are quite low, further attenuating the effect of migration and marriage on daily price.
 
 Next to safety, connectivity and access to public transport is of great importance for tourist.
 
-
 #### Infrastructure
+
 To get from one attraction to the next, we usually can't get around public transportation. AirBnB property owners are aware of this fact and we assume that customers will have to pay a premium for good connectivity, or take a tradeoff on decrease daily price of property and decrease in connectivity.
 
-We therefore engineered a variety of transportation data, including distance of the listing zipcode to the nearest major road and train station. We also included data on the distance of the listing zipcode to the nearest tourist attraction, museums, performing arts centers, and the number of cafes and restaurants per zipcode. 
+We therefore engineered a variety of transportation data, including distance of the listing zipcode to the nearest major road and train station. We also included data on the distance of the listing zipcode to the nearest tourist attraction, museums, performing arts centers, and the number of cafes and restaurants per zipcode.
 
 The distance to tourist attractions, museum, and performing arts centers didn't show any significant correlation, implying that customers likely are not willing to pay up a premium to be close to these facilities. One reason could be that the transportation network in the city is so great that there might be no real need to be that close to these facilities, and that there are many transportation connections all around the city.
 
@@ -404,7 +571,7 @@ maps[[2]] +  labs(title = "Average Price", caption = "Fig.1") +
              labs(title = "Avg. Daily AirBnB Price in Amsterdam", caption = "Fig.1")
 ```
 
-Indeed, Amsterdam has the second best urban public transport system in Europe according to a Bloomberg article (https://www.bloomberg.com/news/articles/2023-12-04/best-cities-for-transportation-public-transit-evs-cycling-networks).
+Indeed, Amsterdam has the second best urban public transport system in Europe according to a Bloomberg article (<https://www.bloomberg.com/news/articles/2023-12-04/best-cities-for-transportation-public-transit-evs-cycling-networks>).
 
 This is corroborated by the average distance of a neighbourhood to what is considered a main road.
 
@@ -429,6 +596,7 @@ maps[[4]] +  labs(caption = "Fig.1") +
              scale_fill_gradient(low = "white",high = airbnb_color, name = "Price Gradient in USD") +
              labs(title = "Avg. Daily AirBnB Price in Amsterdam", caption = "Fig.1")
 ```
+
 Restaurants and cafes are, as expected, concentrated around the central district. However, there are also districts in the mid-west and mid-east of the city that have high housing prices but also many restaurants and cafes.
 
 ```{r visual_13, results = FALSE, message = FALSE, warning = FALSE, error = FALSE}
@@ -437,6 +605,7 @@ maps[[1]] +  labs(title = "Average Price", caption = "Fig.1") +
              scale_fill_gradient(low = "white",high = airbnb_color, name = "Price Gradient in USD") +
              labs(title = "Avg. Daily AirBnB Price in Amsterdam", caption = "Fig.1")
 ```
+
 This attenuates the strength of the predictors numbers of restaurants and cafes. Additionally, there are tracts with very high daily rates in the northwest of the city that only have very few restaurants.
 
 In conclusion, engineering non-hedonic features has been quite demanding as so many factors seem to be well distributed in the city with low opportunities to find factors that clearly point to a price discrimination. This is a good sign as it implies that the city is rather equitable and internal factors of a house rather than demographics like migration influence housing prices.
@@ -477,15 +646,15 @@ unique_values_df %>%
   kbl(caption = "Variable Values") %>%
   kable_classic(full_width = F, html_font = "Cambria")
 ```
+
 In the last step of this section, we check whether we have some features that only have few unique factors. If so, this could become an issue when partitioning the data set into training and test data sets. We see that bed type, property type, and room type are candidates for potential trouble makers. We therefore checked for these rare values and filter them out in the first step in the methodology section.
 
 In conclusion, the feature engineering section gives cues that good accessibility and a rather even price distribution throughout neighbourhoods, along with rather evenly spread demographics like sex crimes or number of cafes and restaurants speak for a rather equitable urban space in Amsterdam.
 
-
-
 # Methods & Results
 
 ## Training Regression
+
 ```{r regression training, results = 'hide', fig.align= 'center', warning = FALSE, message = FALSE, error = FALSE }
 # Partitioning data set into training and test
 set.seed(1000)
@@ -562,7 +731,7 @@ results_train %>%
   kable_classic(full_width = F, html_font = "Cambria")
 ```
 
-We are now ready for our first regression analysis and split the data into a test and training set. Our baseline regression has an adjusted R of 80%, meaning that our predicted values on average have an error of 20%. R is one measure of the accuracy of our model, and we will later also consider mean average prediction error (MAPE). 
+We are now ready for our first regression analysis and split the data into a test and training set. Our baseline regression has an adjusted R of 80%, meaning that our predicted values on average have an error of 20%. R is one measure of the accuracy of our model, and we will later also consider mean average prediction error (MAPE).
 
 We'll go into a detailed analysis and interpretation for R, MAE,and MAPE for our test set. Before we check the performance of our regression model on unseen data (test set), we first want to understand what variables contribute most to our accuracy.
 
@@ -585,10 +754,11 @@ results [[i]] <- summary(reg_train)$r.squared
 
 results <- as.data.frame(cbind(loop, results)) %>% mutate(lagged_results = lag(results), change = as.numeric(results) - as.numeric(lagged_results)) 
 ```
+
 *add graphic for loop*
 
-
 # Test Regression
+
 ```{r test regression, results = FALSE, message = FALSE, warning = FALSE, error = FALSE}
 # Adding nearest neighbours
 coords.test.2 <-  st_coordinates(listings_test) 
@@ -617,10 +787,10 @@ results_test %>%
   kbl(caption = "Test Results") %>%
   kable_classic(full_width = F, html_font = "Cambria")
 ```
-Our test set has a MAE of 21$ and a MAPE of 19.5%. Given that we are missing the most essential predictors in our data set, these results are solid. 
+
+Our test set has a MAE of 21\$ and a MAPE of 19.5%. Given that we are missing the most essential predictors in our data set, these results are solid.
 
 To understand where our model has weaknesses, we map the spatial distribution of erros.
-
 
 ```{r visual_17, results = FALSE, message = FALSE, warning = FALSE, error = FALSE}
 # Visualizing spatial error
@@ -658,13 +828,15 @@ morans_plot <-ggplot(as.data.frame(moranTest$res[c(1:999)]), aes(moranTest$res[c
 
 morans_plot
 ```
+
 We first see that visually, there is no spatial process in the residuals. This implies that our model captured a spatial process, if there was any in first place. We test for this hypothesis with Moran's I.
 
 The Moran's I plot implies that there is no global spatial clustering in the error terms, just as we expected.
 
-But how can we interpret the spatial distribution of errors? Firstly, we see that our model tends to undervalue daily house prices. This makes intuitive sense as we saw that very few our features really isolated expensive listings. As demonstrated above, the k nearest effect was also quite low, implying that there must have been internal factors to the houses that made them soar or decline in price. 
+But how can we interpret the spatial distribution of errors? Firstly, we see that our model tends to undervalue daily house prices. This makes intuitive sense as we saw that very few our features really isolated expensive listings. As demonstrated above, the k nearest effect was also quite low, implying that there must have been internal factors to the houses that made them soar or decline in price.
 
 ## Cross-Validation
+
 ```{r result_cross_validation, results = 'hide', fig.align= 'center', warning = FALSE, message = FALSE, error = FALSE}
 # Specifying 100-fold CV as computational nuance
 fitControl <- trainControl(method = "cv", number = 100)
@@ -701,24 +873,15 @@ reg.cv <-
 reg.cv$resample[1:100,]
 ```
 
-
-
 ```{r result_cross_validation_graph, fig.align= 'center', warning = FALSE, message = FALSE, error = FALSE}
 ggplot(reg.cv$resample) +
   aes(MAE) +
   geom_histogram(bins=15)
 ```
+
 We now test for generalizability of our model via 100-fold cross validation. The MAE peaks around 0.2, which was also our MAE for the test test. Additionally, the distribution is approximately normal with one outlier to the right. This implies that we must have caught some systematic pattern in the daily pricing data with our features, and that additionally hedonic data like the square feet are likely to drastically boost the quality of our model, which already is good enough for a beta test.
 
 As the city of Amsterdam has data on sizes for all listings, we could integrate this feature into our model.
-
-
-
-
-
-
-
-
 
 ```{r random, results = FALSE, message = FALSE, warning = FALSE, error = FALSE}
 variables_to_summarize <- c("daily_price","room_type","near_ATTRAC", "k_nearest_price",
