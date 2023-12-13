@@ -229,6 +229,8 @@ corr_vars %>%
 ```
 One interesting observation from the correlation matrix upfront is that daily price is much more correlated with weekly price (0.87) than with monthly price (0.4) implying that it is likely that for most daily price calculations, we actually had a weekly price value and didn't have to use the monthly price to infer the daily price. This is good for the model for reasons related to long-term rental discounts as mentioned above.
 
+Setting the threshold at 0.9, we also see that only restaurants and cafes show excessive colinearity.
+
 #### Hedonic Variables
 #### Numeric Hedonic Predictors
 As for hedonic variables, we used the predictors in the given data set and engineered a new feature called amenities count, to which we will get later. 
@@ -530,13 +532,13 @@ listings_train <- listings_train %>% mutate(k_nearest_price = lag.listw(spatialW
                                              extra_people,
                                              availability_30,
                                              zipcode,
+                                             cafes,
                                              neighbourhood,
                                              distance))
   
 summary(reg_train)$r.squared
 ```
 
-# Training Regression Results
 ```{r result_traiining_set, fig.align= 'center', warning = FALSE, message = FALSE, error = FALSE}
 # Adding Baseline Regression predictions to data set and adding KPI's
 listings_train <- listings_train %>% na.omit()
@@ -558,17 +560,9 @@ results_train %>%
   kable_classic(full_width = F, html_font = "Cambria")
 ```
 
+We are now ready for our first regression analysis and split the data into a test and training set. Our baseline regression has an adjusted R of 80%, meaning that our predicted values on average have an error of 20%. R is one measure of the accuracy of our model, and we will later also consider mean average prediction error (MAPE). 
 
-
-
-
-
-
-
-
-
-
-
+We'll go into a detailed analysis and interpretation for R, MAE,and MAPE for our test set. Before we check the performance of our regression model on unseen data (test set), we first want to understand what variables contribute most to our accuracy.
 
 ```{r regression, results = 'hide', fig.align= 'center', warning = FALSE, message = FALSE, error = FALSE }
 set.seed(1000)
@@ -591,6 +585,7 @@ results <- as.data.frame(cbind(loop, results)) %>% mutate(lagged_results = lag(r
 ```
 *add graphic for loop*
 
+
 # Test Regression
 ```{r read_data, results = FALSE, message = FALSE, warning = FALSE, error = FALSE}
 # Adding nearest neighbours
@@ -606,10 +601,10 @@ listings_test <- listings_test %>% mutate(k_nearest_price = lag.listw(spatialWei
 listings_test <-
   listings_test %>%
   mutate(Regression = "Baseline Regression",
-         daily_price.predict = predict(reg_train, listings_test),
-         daily_price.error = daily_price.predict - daily_price,
-         daily_price.abserror = abs(daily_price.predict - daily_price),
-         daily_price.ape = (abs(daily_price.predict - daily_price)) / daily_price.predict)%>%
+         daily_price.predict = exp(predict(reg_train, listings_test)),
+         daily_price.error = daily_price.predict - exp(daily_price),
+         daily_price.abserror = abs(daily_price.predict - exp(daily_price)),
+         daily_price.ape = (abs(daily_price.predict - exp(daily_price))) / daily_price.predict)%>%
   filter(daily_price < 3000000, !is.na(daily_price.abserror))
 
 
@@ -619,7 +614,13 @@ results_test <- data.frame(MAE = mean(listings_test$daily_price.abserror, na.rm 
 results_test %>%
   kbl(caption = "Test Results") %>%
   kable_classic(full_width = F, html_font = "Cambria")
+```
+Our test set has a MAE of 21$ and a MAPE of 19.5%. Given that we are missing the most essential predictors in our data set, these results are solid. 
 
+To understand where our model has weaknesses, we map the spatial distribution of erros.
+
+
+```{r read_data, results = FALSE, message = FALSE, warning = FALSE, error = FALSE}
 # Visualizing spatial error
 ggplot() +
   geom_sf(data = listings_test, fill ="grey40" ,colour = "white") +
@@ -632,8 +633,6 @@ ggplot() +
   mapTheme()
 ```
 
-
-# Moran's I Test
 ```{r moran_mc, fig.align= 'center', warning = FALSE, message = FALSE, error = FALSE}
 moranTest <- moran.mc(listings_test$daily_price.error, 
                       spatialWeights.test.2, nsim = 999)
@@ -650,7 +649,11 @@ morans_plot <-ggplot(as.data.frame(moranTest$res[c(1:999)]), aes(moranTest$res[c
 
 morans_plot
 ```
+We first see that visually, there is no spatial process in the residuals. This implies that our model captured a spatial process, if there was any in first place. We test for this hypothesis with Moran's I.
 
+The Moran's I plot implies that there is no global spatial clustering in the error terms, just as we expected.
+
+But how can we interpret the spatial distribution of errors? Firstly, we see that our model tends to undervalue daily house prices. This makes intuitive sense as we saw that very few our features really isolated expensive listings. As demonstrated above, the k nearest effect was also quite low, implying that there must have been internal factors to the houses that made them soar or decline in price. 
 
 ## Cross-Validation
 ```{r result_cross_validation, results = 'hide', fig.align= 'center', warning = FALSE, message = FALSE, error = FALSE}
@@ -696,9 +699,9 @@ ggplot(reg.cv$resample) +
   aes(MAE) +
   geom_histogram(bins=15)
 ```
+We now test for generalizability of our model via 100-fold cross validation. The MAE peaks around 0.2, which was also our MAE for the test test. Additionally, the distribution is approximately normal with one outlier to the right. This implies that we must have caught some systematic pattern in the daily pricing data with our features, and that additionally hedonic data like the square feet are likely to drastically boost the quality of our model, which already is good enough for a beta test.
 
-
-
+As the city of Amsterdam has data on sizes for all listings, we could integrate this feature into our model.
 
 
 
