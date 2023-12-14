@@ -793,14 +793,18 @@ results <- as.data.frame(cbind(loop, results)) %>% mutate(lagged_results = lag(r
 
 results <- results[order(results$change_r_sqrd),]
 
-View(results)
+results %>%
+  kbl(caption = "<strong><center>Weight by Order on Accuracy</strong></center>", escape = FALSE, format = "html") %>%
+  kable_classic(full_width = F, html_font = "Cambria")
+
+
 ```
 
-How does each variable change our $R^2$? We created a loop that successively adds one variable after the other in the order as specified by the loop object. 
+How does each variable change our $R^2$? We created a loop that successively adds one variable after the other in the order as specified by the loop object. The leftmost column is the index of the order of the variable.
 
 The astute reader will realize that variables that are included earlier on will have a greater impact on $R^2$ since these are the first ones to add information to our regression. Hence, their contribution to $R^2$ will be greater. 
 
-However, we want to learn about the impact of k-nearest on the analysis, a variable that is usually added after the normal regression is run and we want to include the spatial process. So the question becomes, how good a predictor is the spatial process if added at the end?
+However, we want to learn about the impact of k-nearest on the analysis, a variable that is usually added after the normal regression is run and we want to include the spatial process. So the question becomes, how good a predictor is the spatial process if added at the end? This is an interesting question because great predictors change the accuracy by a lot even if added at very last.
 
 We see that k-nearest contributes 0.003 to our accuracy if added at the end, from which it could be reasonable to follow that there is no spatial process at all. 
 
