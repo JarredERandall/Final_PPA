@@ -774,7 +774,7 @@ We'll go into a detailed analysis and interpretation for R, MAE,and MAPE for our
 ```{r regression loop, results = 'hide', fig.align= 'center', warning = FALSE, message = FALSE, error = FALSE }
 set.seed(1000)
 
-loop <- c("daily_price", "room_type", "near_ATTRAC", "number_of_reviews", "property_type", "bathrooms", "bedrooms", "review_scores_rating", "cancellation_policy", "host_identity_verified", "accommodates", "beds", "bed_type", "host_is_superhost", "cleaning_fee", "security_deposit", "extra_people", "availability_30", "neighbourhood", "distance","k_nearest_price", "zipcode")
+variable <- c("daily_price", "room_type", "near_ATTRAC", "number_of_reviews", "property_type", "bathrooms", "bedrooms", "review_scores_rating", "cancellation_policy", "host_identity_verified", "accommodates", "beds", "bed_type", "host_is_superhost", "cleaning_fee", "security_deposit", "extra_people", "availability_30", "distance","k_nearest_price", "zipcode")
 
 # For loop to calculate change in regression model upon adding an additional variable
 results <- vector()
@@ -789,7 +789,7 @@ for (i in sequence(length(loop),1,1)) {
 results [[i]] <- summary(reg_train)$r.squared
 }
 
-results <- as.data.frame(cbind(loop, results)) %>% mutate(lagged_results = lag(results), change_r_sqrd = as.numeric(results) - as.numeric(lagged_results)) %>% select(loop, change_r_sqrd)
+results <- as.data.frame(cbind(variable, results)) %>% mutate(lagged_results = lag(results), change_r_sqrd = as.numeric(results) - as.numeric(lagged_results)) %>% select(variable, change_r_sqrd)
 
 results <- results[order(results$change_r_sqrd),]
 
@@ -800,7 +800,7 @@ results %>%
 
 ```
 
-How does each variable change our $R^2$? We created a loop that successively adds one variable after the other in the order as specified by the loop object. The leftmost column is the index of the order of the variable.
+How does each variable change our $R^2$? We created a loop that successively adds one variable after the other in the order as specified by the loop object. The leftmost column is the index of the order of the variable
 
 The astute reader will realize that variables that are included earlier on will have a greater impact on $R^2$ since these are the first ones to add information to our regression. Hence, their contribution to $R^2$ will be greater. 
 
@@ -808,9 +808,9 @@ However, we want to learn about the impact of k-nearest on the analysis, a varia
 
 We see that k-nearest contributes 0.003 to our accuracy if added at the end, from which it could be reasonable to follow that there is no spatial process at all. 
 
-However, when adding a neighborhood effect with the zipcode as last variable to the regression after the k-nearest variable, we get a change of $R^2$ by 0.04, an effect 10 times greater than that of k-nearest.
+However, when adding a neighborhood effect with the zipcode as last variable to the regression after the k-nearest variable, we get a change of $R^2$ by 0.07, an effect more than 20 times as great than that of k-nearest.
 
-This is to say that there is a very weak spatial process, but one that is not captured well with k-nearest. This speaks again for the fact that our AirBnB's might be far apart distance wise, or that nearby apartments can have hedonic features that are vastly different, hence accounting for the non-effecitvity of the spatial process.
+This is to say that there is a very weak spatial process, but one that is not captured well (or at all) with k-nearest. This speaks again for the fact that our AirBnB's might be far apart distance wise, or that nearby apartments can have hedonic features that are vastly different, hence accounting for the non-effecitvity of the spatial process.
 
 # Test Regression
 
