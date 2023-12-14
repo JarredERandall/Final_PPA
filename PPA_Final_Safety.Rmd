@@ -19,6 +19,7 @@ knitr::opts_chunk$set(echo = TRUE)
 knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
 library(tidycensus)
+library(formattable)
 library(sf)
 library(stargazer)
 library(spdep)
@@ -289,6 +290,30 @@ listings <- listings %>% select(all_of(var))
 listings <- listings %>% drop_na(cleaning_fee, security_deposit)
 ```
 
+**ADDED STUFF**
+```{r preparing tables for write up section, results = FALSE, message = FALSE, warning = FALSE, error = FALSE}
+# Creating table counting NA values in square feet column
+total_listings <- nrow(listings)
+sqft_na <- round(percent((sum(is.na(listings$square_feet)) / total_listings)),2)
+sqft_non_na <- round(percent((1- sum(is.na(listings$square_feet)) / total_listings)),2)
+
+sqft_table <- tibble(sqft_na, sqft_non_na)
+
+# Creating table with average security deposit for listings above 100$ vs below 100$
+above_100 <- listings %>% filter(daily_price > 100)
+below_100 <- listings %>% filter(daily_price <= 100)
+
+deposit_above_100 <- round(mean(above_100$security_deposit),2)
+deposit_blw_100 <- round(mean(below_100$security_deposit),2)
+
+deposit_table <- tibble(deposit_above_100, deposit_blw_100)
+
+
+
+
+
+```
+
 ## Exploratory Data Analysis
 
 ### Dependent Variable
@@ -395,7 +420,12 @@ As for hedonic variables, we used the predictors in the given data set and engin
 
 As expected, the correlation matrix shows that number of accommodates (0.55), bedrooms (0.54), beds (0.53), and bathrooms (0.33) are the leading four values. What is interesting is that all of these predictors are essentially proxies for the size of a listing. Since we know that usually, square feet is among the top housing price predictors, but we unfortunately don't have that data for most of our observations, it only makes sense that these "best proxies" have the highest absolute correlation with the daily price.
 
-*Table number of houses with and without sqft*
+**ADDED STUFF**
+```{r visual_2, results = FALSE, message = FALSE, warning = FALSE, error = FALSE}
+sqft_table %>%
+  kbl(caption = "<strong><center>Square Feet NA vs non-NA </strong></center>", escape = FALSE, format = "html") %>%
+  kable_classic(full_width = F, html_font = "Cambria")
+```
 
 Another interesting observation is that the number of bathrooms is less positively correlated with daily price as the other three predictors- a result that is counter-intuitive since most of our work was done in the North American context. Upon some research, there is an easy explanation for that: European houses, on average, simply have fewer bathrooms, even when normalized on a per square feet basis (<https://www.theatlantic.com/ideas/archive/2020/01/why-do-american-houses-have-so-many-bathrooms/605338/>).
 
@@ -403,14 +433,18 @@ The remaining hedonic variables that show some correlation are the cleaning fee 
 
 What is surprising, however, is that the security deposit is only half as strongly correlated with listing price as the cleaning fee. Intuitively, the strength of correlation between cleaning fee and security deposit should approximately match.
 
-There are several explanations as to why there is this difference. Firstly, if the host sets no security deposit amount himself, AirBnB will calculate itself an automated rate that takes 60% of a nights fee times the number of nights rented. This, however, is capped at 1000\$. This implies that expensive listings with no host set price cap are only requiring a rather low security deposit. Another reason is likely that high security deposits make a listing less likely to be booked by increasing the barriers to book the apartment. A host tries to make his listing attractive, and listings that have good features and are well situated with rather low security deposits are more likely to be booked than similar apartments with rather high security deposits.
+There are several explanations as to why there is this difference. Firstly, if the host sets no security deposit amount himself, AirBnB will calculate itself an automated rate that takes 60% of a nights fee times the number of nights rented. This, however, is capped at 1000$. This implies that expensive listings with no host set price cap are only requiring a rather low security deposit. Another reason is likely that high security deposits make a listing less likely to be booked by increasing the barriers to book the apartment. A host tries to make his listing attractive, and listings that have good features and are well situated with rather low security deposits are more likely to be booked than similar apartments with rather high security deposits.
 
-*Graph with apartments greater than 100\$ per night and their average security deposit vs apartments with less than and their average*
+**ADDED STUFF**
+```{r visual_2, results = FALSE, message = FALSE, warning = FALSE, error = FALSE}
+deposit_table %>%
+  kbl(caption = "<strong><center>Square Feet NA vs non-NA </strong></center>", escape = FALSE, format = "html") %>%
+  kable_classic(full_width = F, html_font = "Cambria")
+```
 
 Surprisingly, the engineered feature amenities count which counts the number of amenities in a listing is only weakly correlated with the price. This is because users are rather inconsistent in naming all features, and many low priced homes have many of the features like a couch, TV, etc. The only way to discriminate an expensive from an inexpensive listing could be "special features" like pools, gaming rooms, and so forth - but in a count, a pool and a TV would both simply add one the count.
 
 #### Non-Numeric Hedonic Predictors
-
 As for non-numeric hedonic predictors, we look at the property type. This is an obvious predictor to pick since shared rooms, for instance, are likely to be much less expensive that whole houses.
 
 ```{r visual_3, results = FALSE, message = FALSE, warning = FALSE, error = FALSE}
@@ -469,8 +503,6 @@ Adding the neighourhoud effects and even the k-nearest neighbors only increases 
 However, our data set is not as dense, meaning that our k-nearest observations are quite far away, and that as a consequence, we could even switch between neighbourhouds. Additionally, we are missing the square feet size of each apartment, a core predictor for each pricing prediction.
 
 One finding in support of this argument is that in a later section, our regression accuracy will only increase by 0.02 when changing our k from 5 to 10 in the k nearest neighbor function. This implies that surrounding listings do nearly nothing to explain the value of the listing itself.
-
-*Add average distance to k nearest neighbors (use spatstats package) nndist(listings, 5) spatstats OR say that changing k nearest from 5 to 20 doesn't make a big difference in the model -\> low spatial process -\> more hedonic variables for prediction*
 
 Given the above observations, we therefore tried to come up with demographic and infrastructural feature engineering to improve the model.
 
@@ -738,11 +770,13 @@ We are now ready for our first regression analysis and split the data into a tes
 
 We'll go into a detailed analysis and interpretation for R, MAE,and MAPE for our test set. Before we check the performance of our regression model on unseen data (test set), we first want to understand what variables contribute most to our accuracy.
 
+**ADDED STUFF**
 ```{r regression loop, results = 'hide', fig.align= 'center', warning = FALSE, message = FALSE, error = FALSE }
 set.seed(1000)
 
-loop <- c("daily_price", "room_type", "near_ATTRAC", "k_nearest_price", "number_of_reviews", "property_type", "bathrooms", "bedrooms", "review_scores_rating", "cancellation_policy", "host_identity_verified", "accommodates", "beds", "bed_type", "host_is_superhost", "cleaning_fee", "security_deposit", "extra_people", "availability_30", "zipcode", "neighbourhood", "distance")
+loop <- c("daily_price", "room_type", "near_ATTRAC", "number_of_reviews", "property_type", "bathrooms", "bedrooms", "review_scores_rating", "cancellation_policy", "host_identity_verified", "accommodates", "beds", "bed_type", "host_is_superhost", "cleaning_fee", "security_deposit", "extra_people", "availability_30", "neighbourhood", "distance","k_nearest_price", "zipcode")
 
+# For loop to calculate change in regression model upon adding an additional variable
 results <- vector()
 
 for (i in sequence(length(loop),1,1)) {
@@ -755,10 +789,24 @@ for (i in sequence(length(loop),1,1)) {
 results [[i]] <- summary(reg_train)$r.squared
 }
 
-results <- as.data.frame(cbind(loop, results)) %>% mutate(lagged_results = lag(results), change = as.numeric(results) - as.numeric(lagged_results)) 
+results <- as.data.frame(cbind(loop, results)) %>% mutate(lagged_results = lag(results), change_r_sqrd = as.numeric(results) - as.numeric(lagged_results)) %>% select(loop, change_r_sqrd)
+
+results <- results[order(results$change_r_sqrd),]
+
+View(results)
 ```
 
-*add graphic for loop*
+How does each variable change our $R^2$? We created a loop that successively adds one variable after the other in the order as specified by the loop object. 
+
+The astute reader will realize that variables that are included earlier on will have a greater impact on $R^2$ since these are the first ones to add information to our regression. Hence, their contribution to $R^2$ will be greater. 
+
+However, we want to learn about the impact of k-nearest on the analysis, a variable that is usually added after the normal regression is run and we want to include the spatial process. So the question becomes, how good a predictor is the spatial process if added at the end?
+
+We see that k-nearest contributes 0.003 to our accuracy if added at the end, from which it could be reasonable to follow that there is no spatial process at all. 
+
+However, when adding a neighborhood effect with the zipcode as last variable to the regression after the k-nearest variable, we get a change of $R^2$ by 0.04, an effect 10 times greater than that of k-nearest.
+
+This is to say that there is a very weak spatial process, but one that is not captured well with k-nearest. This speaks again for the fact that our AirBnB's might be far apart distance wise, or that nearby apartments can have hedonic features that are vastly different, hence accounting for the non-effecitvity of the spatial process.
 
 # Test Regression
 
@@ -885,8 +933,6 @@ ggplot(reg.cv$resample) +
        y="Frequency")  +
   theme_bw() +
     theme(panel.grid.minor = element_blank())
-  
-  
 ```
 
 We now test for generalizability of our model via 100-fold cross validation. The MAE peaks around 0.2, which was also our MAE for the test test. Additionally, the distribution is approximately normal with one outlier to the right. This implies that we must have caught some systematic pattern in the daily pricing data with our features, and that additionally hedonic data like the square feet are likely to drastically boost the quality of our model, which already is good enough for a beta test.
